@@ -80,6 +80,7 @@ import LaboratoryDashboard from "@/pages/laboratory-dashboard";
 import ImagingDashboard from "@/pages/imaging-dashboard";
 import ProcurementDashboard from "@/pages/procurement-dashboard";
 import AnalyticsDashboard from "@/pages/analytics-dashboard";
+import MessagesDashboard from "@/pages/messages-dashboard";
 
 function Router() {
   return (
@@ -155,6 +156,7 @@ function Router() {
       <ProtectedRoute path="/imaging-dashboard" component={ImagingDashboard} />
       <ProtectedRoute path="/procurement-dashboard" component={ProcurementDashboard} />
       <ProtectedRoute path="/analytics-dashboard" component={AnalyticsDashboard} />
+      <ProtectedRoute path="/messages-dashboard" component={MessagesDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
