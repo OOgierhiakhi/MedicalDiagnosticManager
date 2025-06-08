@@ -74,11 +74,15 @@ import IncomeStatement from "@/pages/income-statement";
 import DailySummaryManagement from "@/pages/daily-summary-management";
 import CenterManagerDashboard from "@/pages/center-manager-dashboard";
 import DataImportManagement from "@/pages/data-import-management";
+import MainDashboard from "@/pages/main-dashboard";
+import PatientDashboard from "@/pages/patient-dashboard";
+import LaboratoryDashboard from "@/pages/laboratory-dashboard";
 
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={() => <CenterManagerDashboard />} />
+      <ProtectedRoute path="/" component={() => <MainDashboard />} />
+      <ProtectedRoute path="/main-dashboard" component={MainDashboard} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/patient-intake" component={PatientIntake} />
       <ProtectedRoute path="/patient-management" component={PatientManagement} />
@@ -143,6 +147,8 @@ function Router() {
       <ProtectedRoute path="/daily-summary-management" component={DailySummaryManagement} />
       <ProtectedRoute path="/center-manager-dashboard" component={CenterManagerDashboard} />
       <ProtectedRoute path="/data-import" component={DataImportManagement} />
+      <ProtectedRoute path="/patient-dashboard" component={PatientDashboard} />
+      <ProtectedRoute path="/laboratory-dashboard" component={LaboratoryDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
