@@ -67,6 +67,12 @@ const sidebarItems = [
     description: "Revenue, expenses, reporting"
   },
   {
+    title: "Billing & Payments",
+    icon: CreditCard,
+    path: "/billing-dashboard",
+    description: "Invoice management & payments"
+  },
+  {
     title: "Inventory Control",
     icon: Package,
     path: "/inventory-dashboard",
