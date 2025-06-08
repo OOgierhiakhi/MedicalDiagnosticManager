@@ -224,8 +224,9 @@ export default function PatientIntake() {
     setCurrentWorkflowStep("processing");
 
     try {
-      // 1. Schedule the tests first
-      const testPromises = selectedTests.map(testId => {
+      // 1. Schedule the tests first (deduplicated)
+      const uniqueTests = selectedTests.filter((testId, index) => selectedTests.indexOf(testId) === index);
+      const testPromises = uniqueTests.map(testId => {
         return apiRequest("POST", "/api/patient-tests", {
           testId: Number(testId),
           patientId: Number(selectedPatient?.id),
@@ -239,12 +240,13 @@ export default function PatientIntake() {
 
       const scheduledTests = await Promise.all(testPromises);
 
-      // 2. Create invoice
+      // 2. Create invoice with deduplication
+      const uniqueTestsForInvoice = Array.from(new Set(selectedTests)); // Remove any duplicate test IDs
       const invoiceData = {
         patientId: selectedPatient?.id,
         branchId: user?.branchId,
         tenantId: user?.tenantId,
-        items: selectedTests.map(testId => {
+        items: uniqueTests.map(testId => {
           const test = (tests as any[]).find((t: any) => t.id === testId);
           return {
             description: test?.name || "Test",
