@@ -77,6 +77,9 @@ import DataImportManagement from "@/pages/data-import-management";
 import MainDashboard from "@/pages/main-dashboard";
 import PatientDashboard from "@/pages/patient-dashboard";
 import LaboratoryDashboard from "@/pages/laboratory-dashboard";
+import ImagingDashboard from "@/pages/imaging-dashboard";
+import ProcurementDashboard from "@/pages/procurement-dashboard";
+import AnalyticsDashboard from "@/pages/analytics-dashboard";
 
 function Router() {
   return (
@@ -149,6 +152,9 @@ function Router() {
       <ProtectedRoute path="/data-import" component={DataImportManagement} />
       <ProtectedRoute path="/patient-dashboard" component={PatientDashboard} />
       <ProtectedRoute path="/laboratory-dashboard" component={LaboratoryDashboard} />
+      <ProtectedRoute path="/imaging-dashboard" component={ImagingDashboard} />
+      <ProtectedRoute path="/procurement-dashboard" component={ProcurementDashboard} />
+      <ProtectedRoute path="/analytics-dashboard" component={AnalyticsDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
