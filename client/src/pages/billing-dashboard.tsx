@@ -82,12 +82,12 @@ export default function BillingDashboard() {
   };
 
   // Filter invoices based on search and status
-  const filteredInvoices = invoices?.filter((invoice: any) => {
+  const filteredInvoices = invoicesArray.filter((invoice: any) => {
     const matchesSearch = invoice.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          invoice.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }) || [];
+  });
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -162,7 +162,7 @@ export default function BillingDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Invoices</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {invoices?.length || 0}
+                  {invoicesArray.length}
                 </p>
               </div>
               <FileText className="w-8 h-8 text-blue-600" />
@@ -315,15 +315,15 @@ export default function BillingDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded">
                     <span>Cash Payments</span>
-                    <span className="font-semibold">{formatCurrency(paymentSummary?.cash || 0)}</span>
+                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.cash || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
                     <span>POS/Card Payments</span>
-                    <span className="font-semibold">{formatCurrency(paymentSummary?.pos || 0)}</span>
+                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.pos || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
                     <span>Bank Transfers</span>
-                    <span className="font-semibold">{formatCurrency(paymentSummary?.transfer || 0)}</span>
+                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.transfer || 0)}</span>
                   </div>
                 </div>
               </CardContent>
