@@ -241,7 +241,6 @@ export default function PatientIntake() {
       const scheduledTests = await Promise.all(testPromises);
 
       // 2. Create invoice with deduplication
-      const uniqueTestsForInvoice = Array.from(new Set(selectedTests)); // Remove any duplicate test IDs
       const invoiceData = {
         patientId: selectedPatient?.id,
         branchId: user?.branchId,
