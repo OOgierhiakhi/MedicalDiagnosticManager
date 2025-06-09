@@ -83,6 +83,7 @@ export interface IStorage {
   getPatientsByBranch(branchId: number, limit?: number): Promise<Patient[]>;
   getPatient(id: number): Promise<Patient | undefined>;
   createPatient(patient: InsertPatient): Promise<Patient>;
+  updatePatient(id: number, patientData: Partial<Patient>): Promise<Patient | null>;
   generatePatientId(tenantId: number): Promise<string>;
   searchPatients(branchId: number, query: string): Promise<Patient[]>;
   
@@ -242,6 +243,18 @@ export class DatabaseStorage implements IStorage {
       .values(insertPatient)
       .returning();
     return patient;
+  }
+
+  async updatePatient(id: number, patientData: Partial<Patient>): Promise<Patient | null> {
+    const [updatedPatient] = await db
+      .update(patients)
+      .set({
+        ...patientData,
+        updatedAt: new Date()
+      })
+      .where(eq(patients.id, id))
+      .returning();
+    return updatedPatient || null;
   }
 
   async generatePatientId(tenantId: number): Promise<string> {
