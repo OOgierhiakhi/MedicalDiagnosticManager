@@ -460,39 +460,33 @@ export function registerRoutes(app: Express): Server {
       const endOfDay = new Date(today);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // Get today's invoices for revenue calculation
-      const todayInvoices = await db
-        .select()
-        .from(invoices)
-        .where(
-          and(
-            eq(invoices.branchId, branchId),
-            eq(invoices.tenantId, tenantId),
-            gte(invoices.createdAt, startOfDay),
-            lte(invoices.createdAt, endOfDay)
-          )
-        );
+      // Get today's invoices for revenue calculation using raw SQL to avoid schema issues
+      const todayInvoicesResult = await db.execute(sql`
+        SELECT * FROM invoices 
+        WHERE branch_id = ${branchId} 
+        AND tenant_id = ${tenantId} 
+        AND created_at >= ${startOfDay} 
+        AND created_at <= ${endOfDay}
+      `);
+      const todayInvoices = todayInvoicesResult.rows;
 
-      // Get today's patient tests for patient count and active tests
-      const todayPatientTests = await db
-        .select()
-        .from(patientTests)
-        .where(
-          and(
-            eq(patientTests.branchId, branchId),
-            eq(patientTests.tenantId, tenantId),
-            gte(patientTests.createdAt, startOfDay),
-            lte(patientTests.createdAt, endOfDay)
-          )
-        );
+      // Get today's patient tests for patient count using raw SQL
+      const todayPatientTestsResult = await db.execute(sql`
+        SELECT * FROM patient_tests 
+        WHERE branch_id = ${branchId} 
+        AND tenant_id = ${tenantId} 
+        AND created_at >= ${startOfDay} 
+        AND created_at <= ${endOfDay}
+      `);
+      const todayPatientTests = todayPatientTestsResult.rows;
 
-      // Calculate metrics
-      const totalRevenue = todayInvoices.reduce((sum, inv) => sum + Number(inv.total), 0);
-      const totalPatients = new Set(todayPatientTests.map(t => t.patientId)).size;
-      const activeTests = todayPatientTests.filter(t => 
+      // Calculate metrics using correct field names from raw SQL results
+      const totalRevenue = todayInvoices.reduce((sum, inv: any) => sum + Number(inv.total_amount || 0), 0);
+      const totalPatients = new Set(todayPatientTests.map((t: any) => t.patient_id)).size;
+      const activeTests = todayPatientTests.filter((t: any) => 
         t.status === 'scheduled' || t.status === 'specimen_collected' || t.status === 'processing'
       ).length;
-      const pendingResults = todayPatientTests.filter(t => t.status === 'processing').length;
+      const pendingResults = todayPatientTests.filter((t: any) => t.status === 'processing').length;
 
       const metrics = {
         totalPatients,
