@@ -46,6 +46,8 @@ export default function PatientBilling() {
   const [selectedBankAccount, setSelectedBankAccount] = useState<number | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [showServiceSelection, setShowServiceSelection] = useState(false);
 
   // Service master list with different pricing tiers
   const serviceMasterList = [
@@ -85,6 +87,12 @@ export default function PatientBilling() {
     queryKey: ["/api/organization-bank-accounts"],
   });
 
+  // Fetch patient's unpaid invoices when patient is selected
+  const { data: unpaidInvoices = [], isLoading: loadingInvoices } = useQuery({
+    queryKey: [`/api/invoices/patient/${selectedPatient?.id}/unpaid`],
+    enabled: !!selectedPatient?.id,
+  });
+
   // Handle URL parameters for patient pre-selection
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -102,6 +110,20 @@ export default function PatientBilling() {
       }
     }
   }, [patients, toast]);
+
+  // Auto-select the latest unpaid invoice when patient is selected
+  useEffect(() => {
+    if (selectedPatient && unpaidInvoices.length > 0 && !selectedInvoice) {
+      // Default to the most recent unpaid invoice
+      const latestInvoice = unpaidInvoices[unpaidInvoices.length - 1];
+      setSelectedInvoice(latestInvoice);
+      setShowServiceSelection(false); // Don't show service selection by default
+    } else if (selectedPatient && unpaidInvoices.length === 0) {
+      // No unpaid invoices, allow service selection for new invoice
+      setShowServiceSelection(true);
+      setSelectedInvoice(null);
+    }
+  }, [selectedPatient, unpaidInvoices, selectedInvoice]);
 
   // Add service to bill
   const addService = (service: any) => {

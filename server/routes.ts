@@ -1046,6 +1046,51 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get patient's unpaid invoices
+  app.get("/api/invoices/patient/:patientId/unpaid", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const patientId = parseInt(req.params.patientId);
+      if (!patientId) {
+        return res.status(400).json({ message: "Invalid patient ID" });
+      }
+
+      // Fetch unpaid invoices for the patient
+      const unpaidInvoices = await db
+        .select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          patientId: invoices.patientId,
+          totalAmount: invoices.totalAmount,
+          netAmount: invoices.netAmount,
+          subtotal: invoices.subtotal,
+          discountAmount: invoices.discountAmount,
+          commissionAmount: invoices.commissionAmount,
+          tests: invoices.tests,
+          paymentStatus: invoices.paymentStatus,
+          createdAt: invoices.createdAt,
+          branchId: invoices.branchId,
+          tenantId: invoices.tenantId
+        })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.patientId, patientId),
+            eq(invoices.paymentStatus, 'unpaid')
+          )
+        )
+        .orderBy(invoices.createdAt);
+
+      res.json(unpaidInvoices);
+    } catch (error) {
+      console.error("Error fetching unpaid invoices:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get referral providers (with tenant ID from user session)
   app.get("/api/referral-providers", async (req, res) => {
     try {
