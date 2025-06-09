@@ -1,0 +1,40 @@
+Prompt:
+You are maintaining a medical diagnostic ERP application on Replit. A critical error occurs during payment processing. When attempting to process a payment for an already generated invoice, the system returns:
+
+500: {"message":"Failed to process payment"}
+
+Steps to reproduce:
+1. Select services and generate an invoice (e.g., INV-202506-0065013 or INV-202506-0066414).
+2. Navigate to the payment page.
+3. Select a payment method (e.g., POS/Card Payment or Cash Payment).
+4. Click "Pay".
+5. The payment fails with a 500 error message.
+
+Objective:
+Fix this payment processing error and ensure the system allows the user to:
+- Select an unpaid invoice
+- View its associated services
+- Enter payment method and complete payment without reselecting services
+
+Technical Requirements:
+1. Investigate and resolve the root cause of the 500 server error. Log the exact backend error message or stack trace.
+2. Ensure invoice IDs are being correctly passed to the payment handler or endpoint.
+3. Prevent null or undefined service list submissions when the invoice is already populated.
+4. Ensure the `InvoiceID`, `AmountToPay`, and `BankAccount` fields are properly passed and validated.
+
+Regression Protection:
+Before finalizing this fix, test and confirm that:
+✅ Previously working functionalities — such as invoice creation, service selection, subtotal/totals, and invoice listing — continue to work as expected  
+✅ No duplicate invoices or service re-selections are triggered  
+✅ Completed payments update invoice status to “Paid”  
+✅ Audit logs or receipts are still generated and saved  
+✅ The user can resume payment mid-process without starting over  
+
+Final Test Flow:
+- Create a new invoice
+- Pay using POS/Card method
+- Pay using Cash method
+- Attempt to pay a completed invoice (should block or warn)
+- Confirm invoice status updates correctly after payment
+
+Once resolved, notify of the correction and show updated status flow for invoice + payment.
