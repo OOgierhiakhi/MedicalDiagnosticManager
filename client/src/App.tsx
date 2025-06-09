@@ -33,6 +33,7 @@ import PurchaseOrders from "@/pages/purchase-orders";
 import PettyCash from "@/pages/petty-cash";
 import InventoryManagement from "@/pages/inventory-management";
 import InventoryDashboard from "@/pages/inventory-dashboard";
+import FixedAssets from "@/pages/fixed-assets";
 import TestConsumptionManagement from "@/pages/test-consumption-management";
 import TrainingSimulation from "@/pages/training-simulation";
 import HumanResources from "@/pages/human-resources";

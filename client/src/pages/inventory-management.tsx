@@ -597,14 +597,14 @@ export default function InventoryManagement() {
               />
             </div>
             <Select
-              value={selectedCategory?.toString() || ""}
-              onValueChange={(value) => setSelectedCategory(value ? parseInt(value) : null)}
+              value={selectedCategory?.toString() || "all"}
+              onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}
             >
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
