@@ -158,6 +158,12 @@ export interface IStorage {
   getPayrollPeriods(tenantId: number): Promise<any[]>;
   createPayrollPeriod(data: any): Promise<any>;
   getHRMetrics(tenantId: number): Promise<any>;
+  
+  // User management methods
+  getAllUsers(tenantId: number): Promise<User[]>;
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
+  getUserRoles(): Promise<{ id: string; name: string; description: string; permissions: string[] }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2784,6 +2790,88 @@ export class DatabaseStorage implements IStorage {
       console.error('Error fetching referral provider:', error);
       return null;
     }
+  }
+
+  // User management methods
+  async getAllUsers(tenantId: number): Promise<User[]> {
+    try {
+      const result = await db
+        .select()
+        .from(users)
+        .where(eq(users.tenantId, tenantId))
+        .orderBy(users.createdAt);
+      
+      return result.map(user => ({
+        ...user,
+        status: user.isActive ? 'active' : 'inactive',
+        lastLogin: user.updatedAt.toISOString()
+      }));
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    try {
+      const [updatedUser] = await db
+        .update(users)
+        .set({ 
+          ...updates, 
+          updatedAt: new Date() 
+        })
+        .where(eq(users.id, id))
+        .returning();
+      
+      return {
+        ...updatedUser,
+        status: updatedUser.isActive ? 'active' : 'inactive',
+        lastLogin: updatedUser.updatedAt.toISOString()
+      };
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw new Error('Failed to update user');
+    }
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    try {
+      await db
+        .delete(users)
+        .where(eq(users.id, id));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Failed to delete user');
+    }
+  }
+
+  async getUserRoles(): Promise<{ id: string; name: string; description: string; permissions: string[] }[]> {
+    return [
+      {
+        id: 'admin',
+        name: 'Administrator',
+        description: 'Full system access and user management',
+        permissions: ['all']
+      },
+      {
+        id: 'manager',
+        name: 'Manager',
+        description: 'Department management and reporting access',
+        permissions: ['manage_department', 'view_reports', 'approve_transactions']
+      },
+      {
+        id: 'staff',
+        name: 'Staff',
+        description: 'Standard operational access',
+        permissions: ['patient_management', 'test_processing', 'basic_reports']
+      },
+      {
+        id: 'user',
+        name: 'User',
+        description: 'Limited access for specific tasks',
+        permissions: ['view_assigned_tasks']
+      }
+    ];
   }
 }
 

@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role").notNull().default("staff"), // admin, manager, technician, receptionist, staff
+  department: text("department"), // laboratory, cardiology, imaging, administration, finance, reception
   tenantId: integer("tenant_id").notNull(),
   branchId: integer("branch_id"),
   isActive: boolean("is_active").notNull().default(true),
