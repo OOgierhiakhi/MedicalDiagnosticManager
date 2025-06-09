@@ -13281,6 +13281,7 @@ Medical System Procurement Team
         subtotal: subtotal?.toString() || "0",
         discountPercentage: "0",
         discountAmount: (discount || 0).toString(),
+        commissionAmount: "0", // Default commission amount for direct payments
         totalAmount: totalAmount.toString(),
         netAmount: totalAmount.toString(),
         paymentStatus: 'paid',

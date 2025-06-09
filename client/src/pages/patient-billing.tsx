@@ -481,7 +481,7 @@ export default function PatientBilling() {
             onClick={handleProcessPayment}
             disabled={!selectedPatient || selectedServices.length === 0 || isProcessingPayment}
           >
-            {isProcessingPayment ? "Processing..." : `Process Payment - ₦${totalAmount.toLocaleString()}`}
+            {isProcessingPayment ? "Processing..." : `Create Invoice - ₦${totalAmount.toLocaleString()}`}
           </Button>
         </div>
       </div>
