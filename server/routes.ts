@@ -628,6 +628,44 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update patient
+  app.put("/api/patients/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const patientId = parseInt(req.params.id);
+      if (isNaN(patientId)) {
+        return res.status(400).json({ message: "Invalid patient ID" });
+      }
+
+      // Prepare patient data with proper formatting
+      const patientData = {
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email || null,
+        phone: req.body.phone,
+        dateOfBirth: req.body.dateOfBirth ? new Date(req.body.dateOfBirth) : null,
+        gender: req.body.gender || null,
+        address: req.body.address || null,
+        pathway: req.body.pathway || "self",
+        referralProviderId: req.body.referralProviderId || null
+      };
+
+      const updatedPatient = await storage.updatePatient(patientId, patientData);
+
+      if (!updatedPatient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      res.json(updatedPatient);
+    } catch (error) {
+      console.error("Error updating patient:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get patient tests
   app.get("/api/patient-tests", async (req, res) => {
     try {

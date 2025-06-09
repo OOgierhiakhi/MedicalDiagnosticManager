@@ -19,6 +19,10 @@ export default function PatientManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBranch, setSelectedBranch] = useState(user?.branchId?.toString() || "1");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
 
   const [newPatient, setNewPatient] = useState({
     firstName: "",
@@ -30,6 +34,25 @@ export default function PatientManagement() {
     address: "",
     pathway: "self",
     referralProviderId: null as number | null
+  });
+
+  const [editPatient, setEditPatient] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+    address: "",
+    pathway: "self",
+    referralProviderId: null as number | null
+  });
+
+  const [scheduleData, setScheduleData] = useState({
+    testId: "",
+    appointmentDate: "",
+    appointmentTime: "",
+    notes: ""
   });
 
   // Fetch patients
@@ -91,9 +114,116 @@ export default function PatientManagement() {
     },
   });
 
+  // Edit patient mutation
+  const editPatientMutation = useMutation({
+    mutationFn: async (patientData: any) => {
+      const response = await apiRequest("PUT", `/api/patients/${selectedPatient.id}`, {
+        ...patientData,
+        dateOfBirth: patientData.dateOfBirth ? new Date(patientData.dateOfBirth).toISOString() : null
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      setIsEditDialogOpen(false);
+      setSelectedPatient(null);
+      toast({
+        title: "Patient Updated",
+        description: "Patient information has been successfully updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update patient. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Schedule appointment mutation
+  const scheduleAppointmentMutation = useMutation({
+    mutationFn: async (scheduleData: any) => {
+      const response = await apiRequest("POST", "/api/patient-tests", {
+        patientId: selectedPatient.id,
+        testId: parseInt(scheduleData.testId),
+        tenantId: user?.tenantId,
+        branchId: parseInt(selectedBranch),
+        scheduledAt: `${scheduleData.appointmentDate}T${scheduleData.appointmentTime}:00`,
+        notes: scheduleData.notes,
+        status: "scheduled"
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patient-tests"] });
+      setIsScheduleDialogOpen(false);
+      setSelectedPatient(null);
+      setScheduleData({
+        testId: "",
+        appointmentDate: "",
+        appointmentTime: "",
+        notes: ""
+      });
+      toast({
+        title: "Appointment Scheduled",
+        description: "Test appointment has been successfully scheduled.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to schedule appointment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Fetch available tests for scheduling
+  const { data: availableTests = [] } = useQuery({
+    queryKey: ["/api/tests"],
+    enabled: isScheduleDialogOpen,
+  });
+
   const handleAddPatient = (e: React.FormEvent) => {
     e.preventDefault();
     addPatientMutation.mutate(newPatient);
+  };
+
+  const handleEditPatient = (e: React.FormEvent) => {
+    e.preventDefault();
+    editPatientMutation.mutate(editPatient);
+  };
+
+  const handleScheduleAppointment = (e: React.FormEvent) => {
+    e.preventDefault();
+    scheduleAppointmentMutation.mutate(scheduleData);
+  };
+
+  const openViewDialog = (patient: any) => {
+    setSelectedPatient(patient);
+    setIsViewDialogOpen(true);
+  };
+
+  const openEditDialog = (patient: any) => {
+    setSelectedPatient(patient);
+    setEditPatient({
+      firstName: patient.firstName || "",
+      lastName: patient.lastName || "",
+      email: patient.email || "",
+      phone: patient.phone || "",
+      dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toISOString().split('T')[0] : "",
+      gender: patient.gender || "",
+      address: patient.address || "",
+      pathway: patient.pathway || "self",
+      referralProviderId: patient.referralProviderId || null
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const openScheduleDialog = (patient: any) => {
+    setSelectedPatient(patient);
+    setIsScheduleDialogOpen(true);
   };
 
   const filteredPatients = patients.filter((patient: any) =>
@@ -365,13 +495,31 @@ export default function PatientManagement() {
                         {new Date(patient.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                        <Button variant="ghost" size="sm" className="text-medical-blue hover:text-blue-700" title="View Patient">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-medical-blue hover:text-blue-700" 
+                          title="View Patient"
+                          onClick={() => openViewDialog(patient)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-slate-gray hover:text-gray-700" title="Edit Patient">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-slate-gray hover:text-gray-700" 
+                          title="Edit Patient"
+                          onClick={() => openEditDialog(patient)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-medical-green hover:text-green-700" title="Schedule Appointment">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-medical-green hover:text-green-700" 
+                          title="Schedule Appointment"
+                          onClick={() => openScheduleDialog(patient)}
+                        >
                           <Calendar className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -392,6 +540,253 @@ export default function PatientManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Patient Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Patient Details</DialogTitle>
+          </DialogHeader>
+          {selectedPatient && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Full Name</Label>
+                  <p className="text-sm font-medium">{selectedPatient.firstName} {selectedPatient.lastName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Patient ID</Label>
+                  <p className="text-sm">{selectedPatient.patientId}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Phone</Label>
+                  <p className="text-sm">{selectedPatient.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Email</Label>
+                  <p className="text-sm">{selectedPatient.email || "Not provided"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Gender</Label>
+                  <p className="text-sm">{selectedPatient.gender || "Not specified"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">Date of Birth</Label>
+                  <p className="text-sm">
+                    {selectedPatient.dateOfBirth 
+                      ? new Date(selectedPatient.dateOfBirth).toLocaleDateString()
+                      : "Not provided"
+                    }
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Address</Label>
+                <p className="text-sm">{selectedPatient.address || "Not provided"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Pathway</Label>
+                <div className="mt-1">{getPathwayBadge(selectedPatient.pathway)}</div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-500">Registration Date</Label>
+                <p className="text-sm">{new Date(selectedPatient.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Patient Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Patient Information</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditPatient} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input
+                  id="editFirstName"
+                  value={editPatient.firstName}
+                  onChange={(e) => setEditPatient({ ...editPatient, firstName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input
+                  id="editLastName"
+                  value={editPatient.lastName}
+                  onChange={(e) => setEditPatient({ ...editPatient, lastName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={editPatient.email}
+                  onChange={(e) => setEditPatient({ ...editPatient, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPhone">Phone</Label>
+                <Input
+                  id="editPhone"
+                  value={editPatient.phone}
+                  onChange={(e) => setEditPatient({ ...editPatient, phone: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editDateOfBirth">Date of Birth</Label>
+                <Input
+                  id="editDateOfBirth"
+                  type="date"
+                  value={editPatient.dateOfBirth}
+                  onChange={(e) => setEditPatient({ ...editPatient, dateOfBirth: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editGender">Gender</Label>
+                <Select value={editPatient.gender} onValueChange={(value) => setEditPatient({ ...editPatient, gender: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editAddress">Address</Label>
+              <Input
+                id="editAddress"
+                value={editPatient.address}
+                onChange={(e) => setEditPatient({ ...editPatient, address: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPathway">Patient Pathway</Label>
+              <Select value={editPatient.pathway} onValueChange={(value) => setEditPatient({ ...editPatient, pathway: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">Self-Pay</SelectItem>
+                  <SelectItem value="referral">Referral</SelectItem>
+                  <SelectItem value="insurance">Insurance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {editPatient.pathway === "referral" && (
+              <div className="space-y-2">
+                <Label htmlFor="editReferralProvider">Referral Provider</Label>
+                <Select 
+                  value={editPatient.referralProviderId?.toString() || ""} 
+                  onValueChange={(value) => setEditPatient({ ...editPatient, referralProviderId: value ? parseInt(value) : null })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select referral provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(referralProviders as any[]).map((provider: any) => (
+                      <SelectItem key={provider.id} value={provider.id.toString()}>
+                        {provider.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={editPatientMutation.isPending}>
+                {editPatientMutation.isPending ? "Updating..." : "Update Patient"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Appointment Dialog */}
+      <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule Test Appointment</DialogTitle>
+          </DialogHeader>
+          {selectedPatient && (
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm font-medium">Patient: {selectedPatient.firstName} {selectedPatient.lastName}</p>
+              <p className="text-sm text-gray-600">ID: {selectedPatient.patientId}</p>
+            </div>
+          )}
+          <form onSubmit={handleScheduleAppointment} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="testId">Select Test</Label>
+              <Select value={scheduleData.testId} onValueChange={(value) => setScheduleData({ ...scheduleData, testId: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a test" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(availableTests as any[]).map((test: any) => (
+                    <SelectItem key={test.id} value={test.id.toString()}>
+                      {test.name} - ₦{test.price?.toLocaleString()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="appointmentDate">Appointment Date</Label>
+                <Input
+                  id="appointmentDate"
+                  type="date"
+                  value={scheduleData.appointmentDate}
+                  onChange={(e) => setScheduleData({ ...scheduleData, appointmentDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="appointmentTime">Appointment Time</Label>
+                <Input
+                  id="appointmentTime"
+                  type="time"
+                  value={scheduleData.appointmentTime}
+                  onChange={(e) => setScheduleData({ ...scheduleData, appointmentTime: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduleNotes">Notes (Optional)</Label>
+              <Input
+                id="scheduleNotes"
+                value={scheduleData.notes}
+                onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
+                placeholder="Any special instructions or notes"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsScheduleDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={scheduleAppointmentMutation.isPending}>
+                {scheduleAppointmentMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
