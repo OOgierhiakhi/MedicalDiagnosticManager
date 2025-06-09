@@ -18,6 +18,7 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  Crown,
   Activity,
   DollarSign,
   Heart,
@@ -95,6 +96,12 @@ const sidebarItems = [
     icon: Shield,
     path: "/user-management",
     description: "Roles & permissions"
+  },
+  {
+    title: "CEO Dashboard",
+    icon: Crown,
+    path: "/ceo-dashboard",
+    description: "Executive analytics & insights"
   },
   {
     title: "Reports & Analytics",
