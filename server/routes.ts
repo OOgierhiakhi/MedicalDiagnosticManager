@@ -14567,5 +14567,319 @@ Medical System Procurement Team
     }
   });
 
+  // Email System API Endpoints
+  
+  // Test email configuration
+  app.post("/api/email/test", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const success = await emailService.testEmailConfiguration();
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Email configuration test successful. Check info@orientmedicaldiagnosis.com for test email." 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Email configuration test failed. Check email credentials." 
+        });
+      }
+    } catch (error: any) {
+      console.error("Email test failed:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Email test failed: " + error.message 
+      });
+    }
+  });
+
+  // Send appointment confirmation email
+  app.post("/api/email/appointment-confirmation", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { patientId, appointmentDate, appointmentTime, services, instructions } = req.body;
+      
+      // Get patient details
+      const [patient] = await db.select()
+        .from(patients)
+        .where(eq(patients.id, patientId));
+
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      const success = await emailService.sendAppointmentConfirmation({
+        name: `${patient.firstName} ${patient.lastName}`,
+        email: patient.email,
+        phone: patient.phone,
+        appointmentDate,
+        appointmentTime,
+        services: Array.isArray(services) ? services : [services],
+        instructions
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Appointment confirmation email sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send appointment confirmation email" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending appointment confirmation:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send test results ready notification
+  app.post("/api/email/test-results-ready", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { patientId, testNames, collectionDate } = req.body;
+      
+      // Get patient details
+      const [patient] = await db.select()
+        .from(patients)
+        .where(eq(patients.id, patientId));
+
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      const success = await emailService.sendTestResultsReady({
+        name: `${patient.firstName} ${patient.lastName}`,
+        email: patient.email,
+        testNames: Array.isArray(testNames) ? testNames : [testNames],
+        collectionDate
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Test results notification email sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send test results notification" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending test results notification:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send payment receipt email
+  app.post("/api/email/payment-receipt", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { patientId, invoiceNumber, amount, services, paymentDate, paymentMethod } = req.body;
+      
+      // Get patient details
+      const [patient] = await db.select()
+        .from(patients)
+        .where(eq(patients.id, patientId));
+
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      const success = await emailService.sendPaymentReceipt({
+        name: `${patient.firstName} ${patient.lastName}`,
+        email: patient.email,
+        invoiceNumber,
+        amount: parseFloat(amount),
+        services: Array.isArray(services) ? services : [services],
+        paymentDate,
+        paymentMethod
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Payment receipt email sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send payment receipt email" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending payment receipt:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send critical test result alert
+  app.post("/api/email/critical-alert", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { physicianEmail, patientName, testName, criticalValue, normalRange, urgency } = req.body;
+
+      const success = await emailService.sendCriticalResultAlert({
+        physicianEmail,
+        patientName,
+        testName,
+        criticalValue,
+        normalRange,
+        urgency: urgency || 'HIGH'
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Critical result alert sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send critical result alert" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending critical alert:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send staff notification
+  app.post("/api/email/staff-notification", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { recipient, subject, message, priority, department } = req.body;
+
+      const success = await emailService.sendStaffNotification({
+        recipient,
+        subject,
+        message,
+        priority: priority || 'NORMAL',
+        department
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Staff notification sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send staff notification" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending staff notification:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send appointment reminder
+  app.post("/api/email/appointment-reminder", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { patientId, appointmentDate, appointmentTime, services, instructions } = req.body;
+      
+      // Get patient details
+      const [patient] = await db.select()
+        .from(patients)
+        .where(eq(patients.id, patientId));
+
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      const success = await emailService.sendAppointmentReminder({
+        name: `${patient.firstName} ${patient.lastName}`,
+        email: patient.email,
+        appointmentDate,
+        appointmentTime,
+        services: Array.isArray(services) ? services : [services],
+        instructions
+      });
+
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Appointment reminder sent successfully" 
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send appointment reminder" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error sending appointment reminder:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get email logs
+  app.get("/api/email/logs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { status, recipient, startDate, endDate, limit = 100 } = req.query;
+      let whereConditions = [];
+      
+      if (status && status !== 'all') {
+        whereConditions.push(`status = '${status}'`);
+      }
+      
+      if (recipient) {
+        whereConditions.push(`recipient LIKE '%${recipient}%'`);
+      }
+      
+      if (startDate && endDate) {
+        whereConditions.push(`sent_at BETWEEN '${startDate}' AND '${endDate}'`);
+      }
+
+      const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+      
+      const logs = await db.execute(`
+        SELECT * FROM email_logs 
+        ${whereClause}
+        ORDER BY sent_at DESC 
+        LIMIT ${parseInt(limit as string)}
+      `);
+
+      res.json(logs.rows || []);
+    } catch (error: any) {
+      console.error("Error fetching email logs:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
