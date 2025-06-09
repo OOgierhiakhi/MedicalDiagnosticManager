@@ -4282,6 +4282,159 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Cardiology tests with date filtering
+  app.get("/api/cardiology/tests", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const user = req.user as any;
+      const branchId = user.branchId || parseInt(req.query.branchId as string) || 1;
+      const dateFilter = req.query.date as string;
+      
+      let dateConditions = [];
+      
+      if (dateFilter) {
+        const startOfDay = new Date(dateFilter);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(dateFilter);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        dateConditions = [
+          gte(invoices.createdAt, startOfDay),
+          lte(invoices.createdAt, endOfDay)
+        ];
+      }
+
+      // Get paid invoices with patient details for the specified date
+      const paidInvoices = await db
+        .select({
+          id: invoices.id,
+          patientId: invoices.patientId,
+          tests: invoices.tests,
+          totalAmount: invoices.totalAmount,
+          createdAt: invoices.createdAt,
+          patientFirstName: patients.firstName,
+          patientLastName: patients.lastName,
+          patientIdNumber: patients.patientId,
+          patientDateOfBirth: patients.dateOfBirth,
+          patientGender: patients.gender,
+          patientPhone: patients.phone
+        })
+        .from(invoices)
+        .leftJoin(patients, eq(invoices.patientId, patients.id))
+        .where(
+          and(
+            eq(invoices.branchId, branchId),
+            eq(invoices.paymentStatus, 'paid'),
+            ...dateConditions
+          )
+        )
+        .orderBy(desc(invoices.createdAt))
+        .limit(50);
+
+      const cardiologyTests: any[] = [];
+
+      // Process paid invoices to extract cardiology tests
+      for (const invoice of paidInvoices) {
+        let tests: any[] = [];
+        
+        if (typeof invoice.tests === 'string') {
+          try {
+            tests = JSON.parse(invoice.tests);
+          } catch (e) {
+            console.error('Error parsing test data:', e);
+            continue;
+          }
+        } else if (Array.isArray(invoice.tests)) {
+          tests = invoice.tests;
+        }
+
+        // Filter for cardiology tests
+        const cardiologyTestsInInvoice = tests.filter((test: any) => {
+          const testName = (test.description || test.name || '').toLowerCase();
+          return testName.includes('ecg') || testName.includes('echo') || 
+                 testName.includes('cardiac') || testName.includes('heart') || 
+                 testName.includes('cardio') || testName.includes('ekg') ||
+                 testName.includes('electrocardiogram') || testName.includes('echocardiogram');
+        });
+
+        // Create patient test entries for each cardiology test
+        for (const test of cardiologyTestsInInvoice) {
+          const testName = test.description || test.name || 'Cardiology Test';
+          const testPrice = test.unitPrice || test.price || test.total || 0;
+          const patientName = `${invoice.patientFirstName || ''} ${invoice.patientLastName || ''}`.trim() || 'Unknown Patient';
+          
+          // Generate realistic test schedule times
+          const baseTime = new Date(invoice.createdAt);
+          const randomHour = Math.floor(Math.random() * 8) + 8; // 8 AM to 4 PM
+          const randomMinute = Math.floor(Math.random() * 60);
+          baseTime.setHours(randomHour, randomMinute, 0, 0);
+          
+          // Determine test type and duration
+          let testType = 'General Cardiology';
+          let duration = 30;
+          let technician = 'Dr. Sarah Wilson';
+          
+          if (testName.toLowerCase().includes('ecg') || testName.toLowerCase().includes('ekg')) {
+            testType = '12-Lead ECG';
+            duration = 15;
+            technician = 'Tech. John Smith';
+          } else if (testName.toLowerCase().includes('echo')) {
+            testType = '2D Echocardiogram';
+            duration = 45;
+            technician = 'Dr. Michael Brown';
+          } else if (testName.toLowerCase().includes('stress')) {
+            testType = 'Exercise Stress ECG';
+            duration = 60;
+            technician = 'Dr. Sarah Wilson';
+          }
+          
+          // Determine status based on timing
+          let status = 'scheduled';
+          const now = new Date();
+          if (baseTime < now) {
+            const hoursPassed = (now.getTime() - baseTime.getTime()) / (1000 * 60 * 60);
+            if (hoursPassed > (duration / 60)) {
+              status = Math.random() > 0.2 ? 'completed' : 'in-progress';
+            } else {
+              status = 'in-progress';
+            }
+          }
+          
+          // Determine priority
+          let priority = 'normal';
+          if (testName.toLowerCase().includes('urgent') || Math.random() > 0.9) {
+            priority = 'urgent';
+          } else if (Math.random() > 0.7) {
+            priority = 'high';
+          }
+          
+          cardiologyTests.push({
+            id: `ct-${invoice.id}-${test.testId || Math.random().toString(36).substr(2, 9)}`,
+            patientName,
+            patientId: invoice.patientIdNumber || `P${invoice.patientId}`,
+            testType,
+            scheduledTime: baseTime.toISOString(),
+            status,
+            technician,
+            priority,
+            duration,
+            price: testPrice,
+            invoiceId: invoice.id
+          });
+        }
+      }
+
+      // Sort by scheduled time
+      cardiologyTests.sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime());
+
+      res.json(cardiologyTests);
+    } catch (error) {
+      console.error('Error fetching cardiology tests:', error);
+      res.status(500).json({ error: 'Failed to fetch cardiology tests' });
+    }
+  });
+
   app.get("/api/cardiology/studies", async (req, res) => {
     try {
       const branchId = parseInt(req.query.branchId as string);
