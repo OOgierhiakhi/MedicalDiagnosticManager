@@ -124,12 +124,15 @@ export default function MainDashboard() {
     queryKey: ["/api/organization-branding"],
   });
 
-  const { data: dashboardMetrics } = useQuery({
+  const { data: dashboardMetrics, refetch: refetchMetrics } = useQuery({
     queryKey: ["/api/dashboard/metrics"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 0, // Always refetch when component mounts
   });
 
-  const { data: recentActivity } = useQuery({
+  const { data: recentActivity, refetch: refetchActivity } = useQuery({
     queryKey: ["/api/dashboard/recent-activity"],
+    refetchInterval: 60000, // Refresh every minute
   });
 
   return (

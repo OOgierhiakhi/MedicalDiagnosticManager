@@ -3882,13 +3882,27 @@ export function registerRoutes(app: Express): Server {
       }
 
       const invoiceId = parseInt(req.params.id);
-      const paymentData = req.body;
+      const { paymentMethod, receivingBankAccountId } = req.body;
       
-      // Mark invoice as paid
+      // Validate payment method
+      if (!["cash", "pos", "bank_transfer"].includes(paymentMethod)) {
+        return res.status(400).json({ error: "Invalid payment method" });
+      }
+
+      // Validate bank account for non-cash payments
+      if (paymentMethod !== "cash" && !receivingBankAccountId) {
+        return res.status(400).json({ error: "Bank account is required for non-cash payments" });
+      }
+
+      // Generate receipt number
+      const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      // Mark invoice as paid with proper bank account tracking
       await storage.markInvoiceAsPaid(invoiceId, {
-        paymentMethod: paymentData.paymentMethod,
-        paymentDetails: paymentData.paymentDetails,
-        paidBy: req.user.id,
+        paymentMethod,
+        receivingBankAccountId: receivingBankAccountId || null,
+        paidAt: new Date(),
+        receiptNumber
       });
 
       // Create transaction record
@@ -3903,11 +3917,16 @@ export function registerRoutes(app: Express): Server {
           branchId: invoice.branchId,
           createdBy: req.user.id,
           invoiceId: invoice.id,
-          paymentMethod: paymentData.paymentMethod
+          paymentMethod,
+          receiptNumber
         });
       }
 
-      res.json({ success: true });
+      res.json({ 
+        success: true, 
+        receiptNumber,
+        message: "Payment processed successfully"
+      });
     } catch (error) {
       console.error("Error processing payment:", error);
       res.status(500).json({ error: "Failed to process payment" });

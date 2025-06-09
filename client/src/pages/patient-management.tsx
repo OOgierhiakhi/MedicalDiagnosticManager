@@ -187,6 +187,38 @@ export default function PatientManagement() {
 
   const handleAddPatient = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!newPatient.firstName.trim() || !newPatient.lastName.trim() || !newPatient.phone.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "First name, last name, and phone are required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate phone format (Nigerian format)
+    const phoneRegex = /^(\+234|234|0)[789][01]\d{8}$/;
+    if (!phoneRegex.test(newPatient.phone.replace(/\s/g, ''))) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid Nigerian phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate email if provided
+    if (newPatient.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newPatient.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     addPatientMutation.mutate(newPatient);
   };
 
