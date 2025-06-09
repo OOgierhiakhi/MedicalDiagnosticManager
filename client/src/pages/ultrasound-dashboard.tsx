@@ -91,9 +91,9 @@ export default function UltrasoundDashboard() {
   });
 
   const filteredStudies = studies.filter(study =>
-    study.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    study.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    study.studyType.toLowerCase().includes(searchTerm.toLowerCase())
+    (study.patientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (study.patientId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (study.studyType || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status: string) => {

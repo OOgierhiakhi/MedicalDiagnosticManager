@@ -4291,7 +4291,7 @@ export function registerRoutes(app: Express): Server {
       const branchId = user.branchId || parseInt(req.query.branchId as string) || 1;
       const dateFilter = req.query.date as string;
       
-      let dateConditions = [];
+      let dateConditions: any[] = [];
       
       if (dateFilter) {
         const startOfDay = new Date(dateFilter);

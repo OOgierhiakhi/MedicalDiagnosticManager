@@ -207,9 +207,9 @@ export default function ReferenceRanges() {
 
   const filteredRanges = referenceRanges.filter((range: ReferenceRange) => {
     const matchesSearch = 
-      range.parameterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      range.parameterCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      range.testName?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      (range.parameterName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (range.parameterCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (range.testName || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === "all" || range.category === selectedCategory;
     
