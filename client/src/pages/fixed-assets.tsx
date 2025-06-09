@@ -92,10 +92,10 @@ export default function FixedAssets() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: "default",
-      inactive: "secondary",
-      disposed: "destructive",
-      maintenance: "outline"
+      active: "default" as const,
+      inactive: "secondary" as const,
+      disposed: "destructive" as const,
+      maintenance: "outline" as const
     };
     return <Badge variant={variants[status as keyof typeof variants] || "default"}>{status}</Badge>;
   };

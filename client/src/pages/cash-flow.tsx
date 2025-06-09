@@ -65,13 +65,14 @@ export default function CashFlow() {
 
   // Fetch cash flow data
   const { data: cashFlowData, isLoading } = useQuery({
-    queryKey: ["/api/cash-flow", selectedPeriod, startDate, endDate, user?.branchId],
+    queryKey: ["/api/cash-flow", selectedPeriod, startDate, endDate, categoryFilter, user?.branchId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (user?.branchId) params.append('branchId', user.branchId.toString());
       if (selectedPeriod) params.append('period', selectedPeriod);
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
+      if (categoryFilter !== "all") params.append('category', categoryFilter);
       
       const response = await fetch(`/api/cash-flow?${params}`);
       if (!response.ok) throw new Error("Failed to fetch cash flow data");

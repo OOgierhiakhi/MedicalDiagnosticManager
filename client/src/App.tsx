@@ -134,6 +134,7 @@ function Router() {
       <ProtectedRoute path="/accountant-dashboard" component={AccountantDashboard} />
       <ProtectedRoute path="/cashier-dashboard" component={CashierDashboard} />
       <ProtectedRoute path="/inventory-dashboard" component={InventoryDashboard} />
+      <ProtectedRoute path="/fixed-assets" component={FixedAssets} />
       <ProtectedRoute path="/goods-receipt" component={GoodsReceipt} />
       <ProtectedRoute path="/invoice-matching" component={InvoiceMatching} />
       <ProtectedRoute path="/payment-orders" component={PaymentOrders} />

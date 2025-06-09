@@ -105,7 +105,8 @@ export default function IncomeVerification() {
         title: "Success",
         description: "Income entry verified and posted to general ledger"
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/accounting/income-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounting/income-verification-summary"] });
       setShowVerificationDialog(false);
       setSelectedEntry(null);
     },
@@ -128,7 +129,8 @@ export default function IncomeVerification() {
         title: "Entry Flagged",
         description: "Income entry has been flagged for review"
       });
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ["/api/accounting/income-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/accounting/income-verification-summary"] });
     },
     onError: (error: any) => {
       toast({
