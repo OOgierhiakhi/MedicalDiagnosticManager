@@ -1150,9 +1150,9 @@ export default function LaboratoryManagement() {
                 </CardContent>
               </Card>
             ) : (
-              filteredTests.map((test: any) => (
+              filteredTests.map((test: any, index: number) => (
                 <Card 
-                  key={test.id} 
+                  key={`lab-mgmt-${test.id}-${index}`} 
                   className={`hover:shadow-md transition-all duration-300 border ${getTestStageColor(test)} ${
                     processingTests.has(test.id) ? 'ring-2 ring-blue-200 shadow-lg' : ''
                   } ${

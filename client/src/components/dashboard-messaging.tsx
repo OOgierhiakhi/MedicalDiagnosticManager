@@ -103,11 +103,11 @@ export default function DashboardMessaging({
   };
 
   const isMessageRead = (message: InternalMessage, userId: number) => {
-    return message.readBy?.some((read: any) => read.userId === userId);
+    return Array.isArray(message.readBy) && message.readBy.some((read: any) => read.userId === userId);
   };
 
   const isMessageAcknowledged = (message: InternalMessage, userId: number) => {
-    return message.acknowledgedBy?.some((ack: any) => ack.userId === userId);
+    return Array.isArray(message.acknowledgedBy) && message.acknowledgedBy.some((ack: any) => ack.userId === userId);
   };
 
   const toggleMessageExpansion = (messageId: number) => {

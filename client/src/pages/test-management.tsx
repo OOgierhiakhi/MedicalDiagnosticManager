@@ -182,8 +182,8 @@ export default function TestManagement() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {tests.map((patientTest: any) => (
-                          <tr key={patientTest.id} className="hover:bg-gray-50">
+                        {tests.map((patientTest: any, index: number) => (
+                          <tr key={`test-mgmt-${patientTest.id}-${index}`} className="hover:bg-gray-50">
                             <td className="px-4 py-4">
                               <div className="flex items-center">
                                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
