@@ -33,6 +33,8 @@ import {
   bankDeposits,
   dailyTransactions,
   referralProviders,
+  journalEntries,
+  journalEntryLineItems,
   insertBankDepositSchema
 } from "@shared/schema";
 import { 
@@ -13352,10 +13354,16 @@ Medical System Procurement Team
         });
       }
 
-      // Create line items
-      for (const lineItem of lineItems) {
-        await storage.createJournalEntryLineItem(lineItem);
-      }
+      // Create line items directly in database
+      const lineItemsForDb = lineItems.map(item => ({
+        journalEntryId: item.journalEntryId,
+        accountId: 1, // Default account ID - should be mapped from accountCode
+        description: item.description,
+        debitAmount: item.debitAmount.toString(),
+        creditAmount: item.creditAmount.toString()
+      }));
+      
+      await db.insert(journalEntryLineItems).values(lineItemsForDb);
 
       // Generate receipt data
       const receipt = {
