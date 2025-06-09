@@ -34,10 +34,12 @@ export default function BillingDashboard() {
     enabled: !!user?.branchId,
   });
 
-  // Fetch payment summary
-  const { data: paymentSummary } = useQuery({
+  // Fetch payment summary with real-time updates
+  const { data: paymentSummary, refetch: refetchSummary } = useQuery({
     queryKey: ["/api/billing/summary", user?.branchId],
     enabled: !!user?.branchId,
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Calculate billing metrics from summary endpoint

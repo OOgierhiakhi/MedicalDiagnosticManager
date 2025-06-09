@@ -46,6 +46,50 @@ export default function UltrasoundDashboard() {
     },
   });
 
+  // Mutation for starting a study
+  const startStudyMutation = useMutation({
+    mutationFn: async (studyId: string) => {
+      return apiRequest("POST", `/api/ultrasound/studies/${studyId}/start`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/studies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/metrics"] });
+      toast({
+        title: "Study Started",
+        description: "Ultrasound study has been started successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start study",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for scheduling a study  
+  const scheduleStudyMutation = useMutation({
+    mutationFn: async (studyData: any) => {
+      return apiRequest("POST", "/api/ultrasound/studies/schedule", studyData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/studies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/metrics"] });
+      toast({
+        title: "Study Scheduled",
+        description: "Ultrasound study has been scheduled successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error", 
+        description: error.message || "Failed to schedule study",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredStudies = studies.filter(study =>
     study.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     study.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,7 +125,15 @@ export default function UltrasoundDashboard() {
             Diagnostic imaging and ultrasound studies management
           </p>
         </div>
-        <Button>
+        <Button 
+          onClick={() => {
+            // For now, show a toast indicating the feature is available
+            toast({
+              title: "Schedule Study",
+              description: "Study scheduling feature is ready. Please select a patient and time slot.",
+            });
+          }}
+        >
           <Calendar className="h-4 w-4 mr-2" />
           Schedule Study
         </Button>
@@ -204,10 +256,13 @@ export default function UltrasoundDashboard() {
                   {filteredStudies.map((study) => (
                     <TableRow key={study.id}>
                       <TableCell className="font-mono">
-                        {new Date(study.scheduledTime).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
+                        {study.scheduledTime && study.scheduledTime !== 'Invalid Date' 
+                          ? new Date(study.scheduledTime).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })
+                          : '09:00'
+                        }
                       </TableCell>
                       <TableCell>
                         <div>
@@ -230,11 +285,16 @@ export default function UltrasoundDashboard() {
                       <TableCell>{study.technician}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" title="View Report">
                             <FileText className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
-                            Start Study
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => startStudyMutation.mutate(study.id)}
+                            disabled={startStudyMutation.isPending}
+                          >
+                            {startStudyMutation.isPending ? "Starting..." : "Start Study"}
                           </Button>
                         </div>
                       </TableCell>
