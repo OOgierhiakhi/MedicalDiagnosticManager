@@ -183,6 +183,15 @@ const SIDEBAR_MODULES: SidebarModule[] = [
   },
   // Admin
   {
+    title: "CEO Dashboard",
+    description: "Executive analytics and strategic insights",
+    icon: Crown,
+    href: "/ceo-dashboard",
+    allowedRoles: ['admin', 'ceo', 'executive'],
+    level: 'ADMIN',
+    category: 'admin'
+  },
+  {
     title: "System Administration",
     description: "User management and system configuration",
     icon: Settings,

@@ -12,7 +12,8 @@ import {
   Clock, 
   CheckCircle, 
   Eye,
-  MoreHorizontal 
+  MoreHorizontal,
+  Reply
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -120,9 +121,10 @@ export default function DashboardMessaging({
     setExpandedMessages(newExpanded);
   };
 
+  // Filter to show only unread messages on dashboard
   const unreadMessages = messages.filter(msg => !isMessageRead(msg, 1)); // TODO: Get actual user ID
-  const urgentMessages = messages.filter(msg => msg.priority === 'urgent' || msg.priority === 'high');
-  const actionRequiredMessages = messages.filter(msg => msg.actionRequired && !isMessageAcknowledged(msg, 1));
+  const urgentMessages = unreadMessages.filter(msg => msg.priority === 'urgent' || msg.priority === 'high');
+  const actionRequiredMessages = unreadMessages.filter(msg => msg.actionRequired && !isMessageAcknowledged(msg, 1));
 
   if (isLoading) {
     return (
@@ -140,7 +142,8 @@ export default function DashboardMessaging({
     );
   }
 
-  const displayMessages = messages.slice(0, maxMessages);
+  // Display only unread messages on dashboard
+  const displayMessages = unreadMessages.slice(0, maxMessages);
 
   return (
     <Card className={className}>
@@ -275,6 +278,12 @@ export default function DashboardMessaging({
                             onClick={() => toggleMessageExpansion(message.id)}
                           >
                             {isExpanded ? 'Collapse' : 'Expand'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => window.open(`/messages/reply/${message.id}`, '_blank')}
+                          >
+                            <Reply className="h-4 w-4 mr-2" />
+                            Reply
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
