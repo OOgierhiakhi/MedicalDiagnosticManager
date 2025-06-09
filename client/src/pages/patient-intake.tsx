@@ -103,6 +103,11 @@ export default function PatientIntake() {
     enabled: !!user,
   });
 
+  // Fetch organization bank accounts for non-cash payments
+  const { data: organizationBankAccounts = [] } = useQuery({
+    queryKey: ["/api/organization-bank-accounts"],
+  });
+
   // Register new patient mutation
   const registerPatientMutation = useMutation({
     mutationFn: async (patientData: any) => {
@@ -223,6 +228,16 @@ export default function PatientIntake() {
       return;
     }
 
+    // Validate bank account selection for non-cash payments
+    if (paymentMethod !== "cash" && paymentMethod !== "invoice" && !selectedBankAccount) {
+      toast({
+        title: "Bank Account Required",
+        description: "Please select a diagnostic center bank account for non-cash payments.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setCurrentWorkflowStep("processing");
 
     try {
@@ -270,6 +285,7 @@ export default function PatientIntake() {
       if (paymentMethod !== "invoice") {
         await apiRequest("POST", `/api/invoices/${invoice.id}/payment`, {
           paymentMethod: paymentMethod,
+          receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount,
           paymentDetails: {
             method: paymentMethod,
             bank: selectedBank || null,
@@ -870,6 +886,34 @@ export default function PatientIntake() {
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor="bankAccount">Diagnostic Center Bank Account *</Label>
+                        <Select 
+                          value={selectedBankAccount?.toString() || ""} 
+                          onValueChange={(value) => setSelectedBankAccount(Number(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select receiving bank account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizationBankAccounts?.map((account: any) => (
+                              <SelectItem key={account.id} value={account.id.toString()}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{account.accountName}</span>
+                                  <span className="text-sm text-gray-500">
+                                    {account.bankName} - {account.accountNumber}
+                                    {account.isDefaultReceiving && " (Default)"}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">
+                          Select the diagnostic center account that will receive this payment
+                        </p>
+                      </div>
+
                       {paymentMethod === "card" && (
                         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <p className="text-sm text-blue-700">Card payment will be processed at the counter with our POS system.</p>
@@ -898,7 +942,8 @@ export default function PatientIntake() {
                     disabled={
                       !appointmentDetails.scheduledAt || 
                       !paymentMethod || 
-                      ((paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && !selectedBank)
+                      ((paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && !selectedBank) ||
+                      ((paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && !selectedBankAccount)
                     }
                     className="w-full"
                   >

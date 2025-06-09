@@ -13257,8 +13257,16 @@ Medical System Procurement Team
         tenantId,
         branchId,
         timestamp,
-        staffInfo
+        staffInfo,
+        receivingBankAccountId
       } = req.body;
+
+      // Validate bank account for non-cash payments
+      if (paymentMethod !== "cash" && !receivingBankAccountId) {
+        return res.status(400).json({ 
+          message: "Bank account selection required for non-cash payments" 
+        });
+      }
 
       // Generate receipt number
       const receiptNumber = `RCP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
@@ -13277,6 +13285,7 @@ Medical System Procurement Team
         netAmount: totalAmount.toString(),
         paymentStatus: 'paid',
         paymentMethod,
+        receivingBankAccountId: receivingBankAccountId || null,
         paidAt: new Date(timestamp),
         createdBy: staffId
       };
