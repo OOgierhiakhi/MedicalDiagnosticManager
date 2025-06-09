@@ -445,19 +445,63 @@ export function registerRoutes(app: Express): Server {
   // Setup authentication routes
   setupAuth(app);
 
-  // Dashboard metrics endpoint
-  app.get("/api/dashboard/metrics/:branchId", async (req, res) => {
+  // Dashboard metrics endpoint - returns TODAY'S actual data
+  app.get("/api/dashboard/metrics", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const branchId = parseInt(req.params.branchId);
-      if (isNaN(branchId)) {
-        return res.status(400).json({ message: "Invalid branch ID" });
-      }
+      const tenantId = req.user!.tenantId;
+      const branchId = req.user!.branchId;
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
 
-      const metrics = await storage.getDashboardMetrics(branchId);
+      // Get today's invoices for revenue calculation
+      const todayInvoices = await db
+        .select()
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.branchId, branchId),
+            eq(invoices.tenantId, tenantId),
+            gte(invoices.createdAt, startOfDay),
+            lte(invoices.createdAt, endOfDay)
+          )
+        );
+
+      // Get today's patient tests for patient count and active tests
+      const todayPatientTests = await db
+        .select()
+        .from(patientTests)
+        .where(
+          and(
+            eq(patientTests.branchId, branchId),
+            eq(patientTests.tenantId, tenantId),
+            gte(patientTests.createdAt, startOfDay),
+            lte(patientTests.createdAt, endOfDay)
+          )
+        );
+
+      // Calculate metrics
+      const totalRevenue = todayInvoices.reduce((sum, inv) => sum + Number(inv.total), 0);
+      const totalPatients = new Set(todayPatientTests.map(t => t.patientId)).size;
+      const activeTests = todayPatientTests.filter(t => 
+        t.status === 'scheduled' || t.status === 'specimen_collected' || t.status === 'processing'
+      ).length;
+      const pendingResults = todayPatientTests.filter(t => t.status === 'processing').length;
+
+      const metrics = {
+        totalPatients,
+        revenueToday: totalRevenue,
+        activeTests,
+        systemStatus: "Online",
+        lastUpdated: new Date().toISOString()
+      };
+
       res.json(metrics);
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
@@ -13478,52 +13522,56 @@ Medical System Procurement Team
 
       const tenantId = req.user!.tenantId;
       const branchId = req.user!.branchId;
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
 
-      // Use sample transaction data to fix the dashboard display
-      const todayTransactions = [
-        {
-          id: 1,
-          receipt_number: "RCP-001",
-          patient_name: "John Doe",
-          amount: 25000,
-          payment_method: "cash",
-          transaction_time: new Date().toISOString(),
-          cashier_name: "admin"
-        },
-        {
-          id: 2,
-          receipt_number: "RCP-002", 
-          patient_name: "Jane Smith",
-          amount: 35000,
-          payment_method: "pos",
-          transaction_time: new Date().toISOString(),
-          cashier_name: "admin"
-        },
-        {
-          id: 3,
-          receipt_number: "RCP-003",
-          patient_name: "Mike Johnson", 
-          amount: 18000,
-          payment_method: "transfer",
-          transaction_time: new Date().toISOString(),
-          cashier_name: "admin"
-        }
-      ];
+      // Get today's actual invoices/transactions from database
+      const todayInvoices = await db
+        .select()
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.branchId, branchId),
+            eq(invoices.tenantId, tenantId),
+            gte(invoices.createdAt, startOfDay),
+            lte(invoices.createdAt, endOfDay)
+          )
+        );
 
-      // Calculate revenue metrics from actual transaction data
-      const totalRevenue = todayTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-      const cashTotal = todayTransactions
-        .filter(t => t.payment_method === 'cash')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-      const posTotal = todayTransactions
-        .filter(t => t.payment_method === 'pos')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-      const transferTotal = todayTransactions
-        .filter(t => t.payment_method === 'transfer')
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+      // Get today's patient tests to count unique patients
+      const todayPatientTests = await db
+        .select({
+          patientId: patientTests.patientId,
+          testId: patientTests.testId,
+          createdAt: patientTests.createdAt,
+          status: patientTests.status
+        })
+        .from(patientTests)
+        .where(
+          and(
+            eq(patientTests.branchId, branchId),
+            eq(patientTests.tenantId, tenantId),
+            gte(patientTests.createdAt, startOfDay),
+            lte(patientTests.createdAt, endOfDay)
+          )
+        );
 
-      const uniquePatients = new Set(todayTransactions.map(t => t.patient_name)).size;
+      // Calculate revenue metrics from actual invoice data
+      const totalRevenue = todayInvoices.reduce((sum, inv) => sum + Number(inv.total), 0);
+      const cashTotal = todayInvoices
+        .filter(inv => inv.paymentMethod === 'cash')
+        .reduce((sum, inv) => sum + Number(inv.total), 0);
+      const posTotal = todayInvoices
+        .filter(inv => inv.paymentMethod === 'pos')
+        .reduce((sum, inv) => sum + Number(inv.total), 0);
+      const transferTotal = todayInvoices
+        .filter(inv => inv.paymentMethod === 'transfer')
+        .reduce((sum, inv) => sum + Number(inv.total), 0);
+
+      const uniquePatients = new Set(todayPatientTests.map(t => t.patientId)).size;
 
       // Get purchase order metrics using existing schema
       const purchaseOrders = await storage.getPurchaseOrders(tenantId);
@@ -13531,21 +13579,30 @@ Medical System Procurement Team
       const approvedOrders = purchaseOrders.filter(po => po.status === 'approved').length;
       const rejectedOrders = purchaseOrders.filter(po => po.status === 'rejected').length;
 
-      // Get recent transactions (last 10)
-      const recentTransactions = todayTransactions
-        .sort((a, b) => new Date(b.transaction_time).getTime() - new Date(a.transaction_time).getTime())
-        .slice(0, 10);
+      // Get recent transactions (last 10) from actual invoices
+      const recentTransactions = todayInvoices
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 10)
+        .map(inv => ({
+          id: inv.id,
+          receipt_number: `INV-${inv.id}`,
+          patient_name: `Patient ${inv.patientId}`, // Would need to join with patients table for actual names
+          amount: inv.total,
+          payment_method: inv.paymentMethod,
+          transaction_time: inv.createdAt,
+          cashier_name: "admin"
+        }));
 
       // Calculate average transaction amount
-      const averageTransaction = todayTransactions.length > 0 
-        ? totalRevenue / todayTransactions.length 
+      const averageTransaction = todayInvoices.length > 0 
+        ? totalRevenue / todayInvoices.length 
         : 0;
 
       // Monthly trend (using current data - could expand to historical data)
       const monthlyTrend = [{
         month: new Date().toISOString().slice(0, 7), // YYYY-MM format
         revenue: totalRevenue,
-        transactions: todayTransactions.length
+        transactions: todayInvoices.length
       }];
 
       // Compile dashboard response with real data
@@ -13568,7 +13625,7 @@ Medical System Procurement Team
         },
         patients: {
           uniquePatients: uniquePatients,
-          totalVisits: todayTransactions.length,
+          totalVisits: todayInvoices.length,
           averageTransaction: averageTransaction
         },
         recentTransactions: recentTransactions,

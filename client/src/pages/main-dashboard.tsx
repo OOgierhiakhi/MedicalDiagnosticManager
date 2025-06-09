@@ -228,9 +228,11 @@ export default function MainDashboard() {
                 <Users className="w-4 h-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">37</div>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  ↗ 12% from last month
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {dashboardMetrics?.totalPatients || 0}
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Today's unique patients
                 </p>
               </CardContent>
             </Card>
@@ -243,9 +245,15 @@ export default function MainDashboard() {
                 <DollarSign className="w-4 h-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">₦332,750</div>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  ↗ 8% from yesterday
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {new Intl.NumberFormat('en-NG', {
+                    style: 'currency',
+                    currency: 'NGN',
+                    minimumFractionDigits: 0,
+                  }).format(dashboardMetrics?.revenueToday || 0)}
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  From today's transactions
                 </p>
               </CardContent>
             </Card>
@@ -258,9 +266,11 @@ export default function MainDashboard() {
                 <Activity className="w-4 h-4 text-orange-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">23</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {dashboardMetrics?.activeTests || 0}
+                </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400">
-                  7 pending results
+                  Tests in progress
                 </p>
               </CardContent>
             </Card>
@@ -273,7 +283,9 @@ export default function MainDashboard() {
                 <Activity className="w-4 h-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">Online</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {dashboardMetrics?.systemStatus || "Online"}
+                </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   All systems operational
                 </p>
