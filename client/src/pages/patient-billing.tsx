@@ -737,7 +737,7 @@ export default function PatientBilling() {
             disabled={
               !selectedPatient || 
               isProcessingPayment || 
-              (selectedInvoice ? false : selectedServices.length === 0)
+              (!selectedInvoice && selectedServices.length === 0)
             }
           >
             {isProcessingPayment ? "Processing..." : 

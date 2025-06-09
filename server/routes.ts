@@ -1302,6 +1302,119 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Pay existing invoice endpoint
+  app.post("/api/invoices/:invoiceId/payment", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { invoiceId } = req.params;
+      const { paymentMethod, receivingBankAccountId } = req.body;
+
+      // Validate bank account for non-cash payments
+      if (paymentMethod !== "cash" && !receivingBankAccountId) {
+        return res.status(400).json({ 
+          message: "Bank account is required for non-cash payments" 
+        });
+      }
+
+      // Get invoice details
+      const invoice = await storage.getInvoiceById(parseInt(invoiceId));
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      if (invoice.paymentStatus === 'paid') {
+        return res.status(400).json({ message: "Invoice already paid" });
+      }
+
+      // Generate receipt number
+      const receiptNumber = `RCP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+      // Update invoice as paid
+      await storage.markInvoiceAsPaid(parseInt(invoiceId), {
+        paymentMethod,
+        receivingBankAccountId: paymentMethod === "cash" ? null : receivingBankAccountId,
+        paidAt: new Date(),
+        receiptNumber
+      });
+
+      // Create journal entry for payment
+      const journalEntryData = {
+        entryNumber: `JE-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+        entryDate: new Date(),
+        description: `Payment for Invoice #${invoice.invoiceNumber} - ${invoice.patientName}`,
+        tenantId: req.user!.tenantId,
+        branchId: req.user!.branchId,
+        referenceType: 'invoice_payment',
+        referenceNumber: receiptNumber,
+        totalDebit: parseFloat(invoice.totalAmount),
+        totalCredit: parseFloat(invoice.totalAmount),
+        status: 'posted',
+        createdBy: req.user!.id
+      };
+
+      const journalEntry = await storage.createJournalEntry(journalEntryData);
+
+      // Create journal entry line items for payment
+      const lineItems = [
+        {
+          journalEntryId: journalEntry.id,
+          accountId: 1,
+          description: `Cash/Bank receipt - ${paymentMethod.toUpperCase()}`,
+          debitAmount: parseFloat(invoice.totalAmount),
+          creditAmount: 0
+        },
+        {
+          journalEntryId: journalEntry.id,
+          accountId: 2,
+          description: `Accounts Receivable - Invoice #${invoice.invoiceNumber}`,
+          debitAmount: 0,
+          creditAmount: parseFloat(invoice.totalAmount)
+        }
+      ];
+
+      const lineItemsForDb = lineItems.map(item => ({
+        journalEntryId: item.journalEntryId,
+        accountId: item.accountId,
+        description: item.description,
+        debitAmount: item.debitAmount.toString(),
+        creditAmount: item.creditAmount.toString()
+      }));
+      
+      await db.insert(journalEntryLineItems).values(lineItemsForDb);
+
+      // Create daily transaction record
+      await storage.createDailyTransaction({
+        receiptNumber,
+        patientName: invoice.patientName,
+        amount: invoice.totalAmount,
+        paymentMethod,
+        receivingBankAccountId: paymentMethod === "cash" ? null : receivingBankAccountId,
+        cashierId: req.user!.id,
+        branchId: req.user!.branchId,
+        tenantId: req.user!.tenantId,
+        transactionTime: new Date(),
+        verificationStatus: 'verified'
+      });
+
+      console.log(`Invoice payment processed: ${receiptNumber} - ₦${parseFloat(invoice.totalAmount).toLocaleString()} - ${paymentMethod.toUpperCase()}`);
+      console.log(`Journal Entry: ${journalEntry.entryNumber} posted to ERP ledger`);
+
+      res.json({
+        message: "Payment processed successfully",
+        receiptNumber,
+        journalEntryNumber: journalEntry.entryNumber,
+        status: 'completed'
+      });
+
+    } catch (error: any) {
+      console.error("Error processing invoice payment:", error);
+      res.status(500).json({ message: "Failed to process payment" });
+    }
+  });
+
   // Revenue Forecasting API endpoints
   app.get('/api/forecasting/revenue/predict', async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

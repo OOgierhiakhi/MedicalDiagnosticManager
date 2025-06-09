@@ -127,8 +127,10 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   getInvoicesByBranch(branchId: number, status?: string): Promise<Invoice[]>;
   getInvoice(id: number): Promise<Invoice | undefined>;
-  markInvoiceAsPaid(id: number, paymentData: { paymentMethod: string; paymentDetails: any; paidBy: number }): Promise<void>;
+  getInvoiceById(id: number): Promise<Invoice | undefined>;
+  markInvoiceAsPaid(id: number, paymentData: { paymentMethod: string; receivingBankAccountId?: number | null; paidAt: Date; receiptNumber: string }): Promise<void>;
   generateInvoiceNumber(tenantId: number): Promise<string>;
+  getPatientInvoices(patientId: number, tenantId: number): Promise<Invoice[]>;
   
   // Badge system methods
   getBadgeDefinitions(tenantId: number): Promise<BadgeDefinition[]>;
