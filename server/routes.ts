@@ -13269,16 +13269,16 @@ Medical System Procurement Team
         patientId,
         tenantId,
         branchId,
-        amount: totalAmount,
-        status: 'paid',
+        tests: JSON.stringify(services), // Map services to tests field
+        subtotal: subtotal?.toString() || "0",
+        discountPercentage: "0",
+        discountAmount: (discount || 0).toString(),
+        totalAmount: totalAmount.toString(),
+        netAmount: totalAmount.toString(),
+        paymentStatus: 'paid',
         paymentMethod,
-        paymentDate: new Date(timestamp),
-        createdBy: staffId,
-        services: JSON.stringify(services),
-        subtotal,
-        tax,
-        discount,
-        staffInfo: JSON.stringify(staffInfo)
+        paidAt: new Date(timestamp),
+        createdBy: staffId
       };
 
       // Store invoice record
