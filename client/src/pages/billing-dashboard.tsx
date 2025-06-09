@@ -310,15 +310,15 @@ export default function BillingDashboard() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-3 bg-green-50 rounded">
                     <span>Cash Payments</span>
-                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.cash || 0)}</span>
+                    <span className="font-semibold">{formatCurrency(paymentSummary?.paymentMethods?.cash || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
                     <span>POS/Card Payments</span>
-                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.pos || 0)}</span>
+                    <span className="font-semibold">{formatCurrency(paymentSummary?.paymentMethods?.pos || 0)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
                     <span>Bank Transfers</span>
-                    <span className="font-semibold">{formatCurrency((paymentSummary as any)?.transfer || 0)}</span>
+                    <span className="font-semibold">{formatCurrency(paymentSummary?.paymentMethods?.bankTransfer || 0)}</span>
                   </div>
                 </div>
               </CardContent>

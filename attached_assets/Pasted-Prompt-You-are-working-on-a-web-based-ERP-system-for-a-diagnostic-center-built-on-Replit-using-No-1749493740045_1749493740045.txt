@@ -1,0 +1,62 @@
+Prompt:
+You are working on a web-based ERP system for a diagnostic center, built on Replit using Node.js, PostgreSQL, and frontend frameworks.
+
+Several new and existing issues have been identified. You are to address **each issue below**, ensure correct functionality, and guarantee **no loss of previously working features** across billing, dashboard, lab workflow, and scheduling modules.
+
+---
+
+🚩 LIST OF ISSUES TO FIX:
+
+1. **Payment Methods Today Not Updating**
+   - Ensure all successful transactions (POS, cash, transfer) made today are correctly reflected in the “Payment Methods Today” report.
+   - Fix the query or logic that groups transactions by payment method.
+   - Use server-side timestamps to ensure consistency.
+
+2. **Collected Today Value Mismatch**
+   - The “Collected Today” total does not match the total displayed on the home dashboard.
+   - Audit how the dashboard fetches its summary totals. Confirm it pulls **only today’s confirmed payments**, not all-time totals or unapproved payments.
+
+3. **Lab Status Metrics Not Updating**
+   - Pending, In Progress, and Completed counts in the lab dashboard are stale or static.
+   - Ensure real-time or interval-based refresh is applied.
+   - Trigger count update after:
+     - Test is marked as received
+     - Result is entered or approved
+     - Status is updated
+
+4. **Ultrasound Study Schedule Tab Shows Invalid Date**
+   - On the Ultrasound tab, scheduled times show “Invalid Date.”
+   - Fix datetime formatting — ensure ISO 8601 or UTC format is parsed correctly.
+   - Use `toLocaleString()` or date formatting libraries like Day.js or Moment.js.
+
+5. **Start Study Button Not Working**
+   - When clicking “Start Study” on an imaging request, nothing happens.
+   - Confirm if:
+     - Button is wired to a valid `onclick()` handler
+     - The action correctly updates the study status (e.g., from “Scheduled” to “In Progress”)
+     - Proper user permissions are enforced
+
+6. **Specimen Collection Shown in Non-Lab Units**
+   - In units like Imaging, ECG, or Echo, the UI wrongly shows “Specimen Collection” stage.
+   - Apply conditional logic to hide specimen-related steps for non-laboratory services.
+
+---
+
+🛡 REGRESSION SAFETY REQUIREMENTS:
+
+For each fix above, test and confirm the following before deployment:
+
+- ✅ Existing invoices and billing workflows continue to work
+- ✅ Payments already processed still appear in reports
+- ✅ Dashboard values still auto-update across shifts
+- ✅ Lab orders still follow the full result entry workflow
+- ✅ Imaging and Echo tabs retain service details and submission options
+- ✅ Audit logs, printouts, and receipt functions are unaffected
+
+Run the full test suite after all changes, and generate a bug-resolution summary log.
+
+After implementation, respond with:
+- What was changed
+- Which files or components were touched
+- Confirmation of regression testing
+- Any future risks or edge cases observed

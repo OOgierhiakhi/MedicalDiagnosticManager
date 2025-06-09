@@ -463,13 +463,14 @@ export function registerRoutes(app: Express): Server {
       const endOfDay = new Date(today);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // Get today's invoices for revenue calculation using raw SQL to avoid schema issues
+      // Get today's PAID invoices for revenue calculation using raw SQL to avoid schema issues
       const todayInvoicesResult = await db.execute(sql`
         SELECT * FROM invoices 
         WHERE branch_id = ${branchId} 
         AND tenant_id = ${tenantId} 
-        AND created_at >= ${startOfDay} 
-        AND created_at <= ${endOfDay}
+        AND payment_status = 'paid'
+        AND paid_at >= ${startOfDay} 
+        AND paid_at <= ${endOfDay}
       `);
       const todayInvoices = todayInvoicesResult.rows;
 
