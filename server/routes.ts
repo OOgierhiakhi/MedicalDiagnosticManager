@@ -15467,5 +15467,167 @@ Medical System Procurement Team
     }
   });
 
+  // Fixed Assets API routes
+  app.get("/api/fixed-assets", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const assets = [
+        {
+          id: 1,
+          name: "Ultrasound Machine - Model XR-2000",
+          category: "equipment", 
+          description: "High-resolution ultrasound machine for diagnostic imaging",
+          purchaseDate: "2023-01-15",
+          purchasePrice: 2500000,
+          currentValue: 2100000,
+          location: "Ultrasound Department",
+          serialNumber: "US-XR-2000-001",
+          supplier: "Medical Equipment Ltd",
+          depreciationMethod: "straight-line",
+          usefulLife: 10,
+          status: "active"
+        },
+        {
+          id: 2,
+          name: "ECG Machine - CardioMax Pro",
+          category: "equipment",
+          description: "12-lead ECG machine for cardiac diagnostics", 
+          purchaseDate: "2022-08-20",
+          purchasePrice: 850000,
+          currentValue: 680000,
+          location: "Cardiology Unit",
+          serialNumber: "ECG-CMP-2022-045",
+          supplier: "CardioTech Solutions",
+          depreciationMethod: "straight-line", 
+          usefulLife: 8,
+          status: "active"
+        },
+        {
+          id: 3,
+          name: "Laboratory Centrifuge",
+          category: "equipment",
+          description: "High-speed centrifuge for sample processing",
+          purchaseDate: "2024-03-10",
+          purchasePrice: 450000,
+          currentValue: 430000,
+          location: "Main Laboratory",
+          serialNumber: "LC-HS-2024-012", 
+          supplier: "LabTech Instruments",
+          depreciationMethod: "straight-line",
+          usefulLife: 7,
+          status: "active"
+        },
+        {
+          id: 4,
+          name: "Reception Desk Set",
+          category: "furniture",
+          description: "Modern reception desk with storage cabinets",
+          purchaseDate: "2023-06-05",
+          purchasePrice: 180000,
+          currentValue: 144000,
+          location: "Main Reception",
+          serialNumber: "RD-MOD-2023-008",
+          supplier: "Office Furniture Plus",
+          depreciationMethod: "straight-line",
+          usefulLife: 5,
+          status: "active"
+        },
+        {
+          id: 5,
+          name: "Backup Generator",
+          category: "equipment",
+          description: "Diesel generator for emergency power backup",
+          purchaseDate: "2022-11-30", 
+          purchasePrice: 1200000,
+          currentValue: 840000,
+          location: "Generator Room",
+          serialNumber: "GEN-DL-2022-003",
+          supplier: "Power Solutions Inc",
+          depreciationMethod: "straight-line",
+          usefulLife: 15,
+          status: "maintenance"
+        }
+      ];
+
+      res.json(assets);
+    } catch (error: any) {
+      console.error("Error fetching fixed assets:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/fixed-assets/categories", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const categories = [
+        { id: 1, name: "building", label: "Building" },
+        { id: 2, name: "vehicle", label: "Vehicle" },
+        { id: 3, name: "equipment", label: "Equipment" },
+        { id: 4, name: "furniture", label: "Furniture" },
+        { id: 5, name: "other", label: "Other" }
+      ];
+
+      res.json(categories);
+    } catch (error: any) {
+      console.error("Error fetching fixed asset categories:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/fixed-assets", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const {
+        name,
+        category,
+        description,
+        purchaseDate,
+        purchasePrice,
+        currentValue,
+        location,
+        serialNumber,
+        supplier,
+        warrantyExpiry,
+        depreciationMethod,
+        usefulLife,
+        status
+      } = req.body;
+
+      const newAsset = {
+        id: Date.now(),
+        name,
+        category,
+        description,
+        purchaseDate,
+        purchasePrice,
+        currentValue,
+        location,
+        serialNumber,
+        supplier,
+        warrantyExpiry,
+        depreciationMethod,
+        usefulLife,
+        status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      console.log("Created new fixed asset:", newAsset.name);
+      res.status(201).json(newAsset);
+    } catch (error: any) {
+      console.error("Error creating fixed asset:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
