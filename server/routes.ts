@@ -16,6 +16,7 @@ import { pettyCashEngine } from "./petty-cash-engine";
 import { approvalConfigService } from "./approval-config";
 import { revenueForecasting } from "./ml-revenue-forecasting";
 import { enhancedForecastingEngine } from "./enhanced-forecasting";
+import { emailService } from "./email-service";
 import { db, pool } from "./db";
 import PDFDocument from 'pdfkit';
 import { 
