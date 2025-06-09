@@ -40,17 +40,12 @@ export default function BillingDashboard() {
     enabled: !!user?.branchId,
   });
 
-  // Calculate billing metrics
+  // Calculate billing metrics from summary endpoint
   const invoicesArray = Array.isArray(invoices) ? invoices : [];
-  const totalOutstanding = invoicesArray.filter((inv: any) => inv.status === "unpaid")
-    .reduce((sum: number, inv: any) => sum + inv.total, 0) || 0;
-  
-  const totalPaid = invoicesArray.filter((inv: any) => inv.status === "paid")
-    .reduce((sum: number, inv: any) => sum + inv.total, 0) || 0;
-  
-  const overdueInvoices = invoicesArray.filter((inv: any) => 
-    inv.status === "unpaid" && new Date(inv.dueDate) < new Date()
-  ).length || 0;
+  const totalOutstanding = paymentSummary?.totalOutstanding || 0;
+  const collectedToday = paymentSummary?.collectedToday || 0;
+  const overdueInvoices = paymentSummary?.overdueInvoices || 0;
+  const totalInvoices = paymentSummary?.totalInvoices || invoicesArray.length;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -134,7 +129,7 @@ export default function BillingDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Collected Today</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(totalPaid)}
+                  {formatCurrency(collectedToday)}
                 </p>
               </div>
               <CheckCircle className="w-8 h-8 text-green-600" />
@@ -162,7 +157,7 @@ export default function BillingDashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Invoices</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {invoicesArray.length}
+                  {totalInvoices}
                 </p>
               </div>
               <FileText className="w-8 h-8 text-blue-600" />

@@ -1533,6 +1533,80 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Get billing summary for billing dashboard
+  app.get("/api/billing/summary", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const branchId = parseInt(req.query.branchId as string) || req.user.branchId;
+      if (!branchId) {
+        return res.status(400).json({ message: "Branch ID is required" });
+      }
+
+      // Get today's date for filtering
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      // Get all invoices for the branch
+      const allInvoices = await db.select().from(invoices).where(eq(invoices.branchId, branchId));
+      
+      // Calculate summary metrics
+      const totalOutstanding = allInvoices
+        .filter(inv => inv.paymentStatus === 'unpaid')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount.toString()), 0);
+
+      const collectedToday = allInvoices
+        .filter(inv => inv.paymentStatus === 'paid' && inv.paidAt && 
+          new Date(inv.paidAt) >= startOfDay && new Date(inv.paidAt) < endOfDay)
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount.toString()), 0);
+
+      const overdueInvoices = allInvoices
+        .filter(inv => inv.paymentStatus === 'unpaid' && inv.createdAt && 
+          new Date(inv.createdAt) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+        .length;
+
+      const totalInvoices = allInvoices.length;
+
+      // Get payment methods breakdown for today
+      const todayInvoices = allInvoices.filter(inv => 
+        inv.paymentStatus === 'paid' && inv.paidAt && 
+        new Date(inv.paidAt) >= startOfDay && new Date(inv.paidAt) < endOfDay
+      );
+
+      const cashPayments = todayInvoices
+        .filter(inv => inv.paymentMethod === 'cash')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount.toString()), 0);
+
+      const posPayments = todayInvoices
+        .filter(inv => inv.paymentMethod === 'card' || inv.paymentMethod === 'pos')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount.toString()), 0);
+
+      const bankTransfers = todayInvoices
+        .filter(inv => inv.paymentMethod === 'bank_transfer')
+        .reduce((sum, inv) => sum + parseFloat(inv.totalAmount.toString()), 0);
+
+      const summary = {
+        totalOutstanding,
+        collectedToday,
+        overdueInvoices,
+        totalInvoices,
+        paymentMethods: {
+          cash: cashPayments,
+          pos: posPayments,
+          bankTransfer: bankTransfers
+        }
+      };
+
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching billing summary:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get test categories (with tenant ID from user session)
   app.get("/api/test-categories", async (req, res) => {
     try {

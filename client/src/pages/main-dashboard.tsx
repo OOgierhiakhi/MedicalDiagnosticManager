@@ -413,7 +413,7 @@ export default function MainDashboard() {
                   </Button>
                 </Link>
                 
-                <Link href="/accounting-dashboard">
+                <Link href="/billing-dashboard">
                   <Button variant="outline" className="w-full h-20 flex flex-col space-y-2">
                     <Calculator className="w-6 h-6" />
                     <span className="text-xs">Billing</span>
