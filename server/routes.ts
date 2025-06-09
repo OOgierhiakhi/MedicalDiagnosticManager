@@ -9996,6 +9996,105 @@ Medical System Procurement Team
     }
   });
 
+  // User Management API endpoints
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const users = await storage.getAllUsers(req.user?.tenantId || 1);
+      res.json(users);
+    } catch (error: any) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { username, email, password, firstName, lastName, role, department } = req.body;
+      
+      // Hash password in production - for now using plain text for development
+      const newUser = await storage.createUser({
+        username,
+        email,
+        password, // In production, hash this
+        firstName,
+        lastName,
+        role,
+        department,
+        tenantId: req.user?.tenantId || 1,
+        branchId: req.user?.branchId || 1,
+        isActive: true
+      });
+
+      res.json(newUser);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/users/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userId = parseInt(req.params.id);
+      const { username, email, firstName, lastName, role, department, isActive } = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, {
+        username,
+        email,
+        firstName,
+        lastName,
+        role,
+        department,
+        isActive
+      });
+
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userId = parseInt(req.params.id);
+      await storage.deleteUser(userId);
+      res.json({ message: "User deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/roles", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const roles = await storage.getUserRoles();
+      res.json(roles);
+    } catch (error: any) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get provider ledger/account statement
   app.get("/api/referral-providers/:id/ledger", async (req, res) => {
     try {
