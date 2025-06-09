@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,24 @@ export default function PatientBilling() {
     queryKey: ["/api/patients", user?.branchId],
     enabled: !!user?.branchId,
   });
+
+  // Handle URL parameters for patient pre-selection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('patientId');
+    const patientName = urlParams.get('patientName');
+    
+    if (patientId && patientName && patients.length > 0) {
+      const patient = patients.find((p: any) => p.id === parseInt(patientId));
+      if (patient) {
+        setSelectedPatient(patient);
+        toast({
+          title: "Patient Selected",
+          description: `Ready to process payment for ${decodeURIComponent(patientName)}`,
+        });
+      }
+    }
+  }, [patients, toast]);
 
   // Add service to bill
   const addService = (service: any) => {

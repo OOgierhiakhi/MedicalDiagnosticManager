@@ -23,7 +23,8 @@ import {
   Clock,
   Search,
   Home,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -964,35 +965,48 @@ export default function PatientIntake() {
                     </div>
                   )}
                   
-                  <Button 
-                    onClick={() => {
-                      setCurrentStep(1);
-                      setCurrentWorkflowStep("registration");
-                      setSelectedPatient(null);
-                      setSelectedTests([]);
-                      setNewPatientData({
-                        firstName: "",
-                        lastName: "",
-                        email: "",
-                        phone: "",
-                        dateOfBirth: "",
-                        gender: "male",
-                        address: "",
-                        nin: ""
-                      });
-                      setSearchQuery("");
-                      setTestSearchTerm("");
-                      setIsNewPatient(true);
-                      toast({
-                        title: "Ready for Next Patient",
-                        description: "System has been reset for the next patient intake.",
-                      });
-                    }}
-                    className="bg-medical-blue hover:bg-blue-700"
-                  >
-                    <UserPlus className="mr-2 w-4 h-4" />
-                    Process Another Patient
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button 
+                      onClick={() => {
+                        // Navigate to patient billing with current patient selected
+                        window.location.href = `/patient-billing?patientId=${selectedPatient?.id}&patientName=${encodeURIComponent(selectedPatient?.firstName + ' ' + selectedPatient?.lastName)}`;
+                      }}
+                      className="bg-green-600 hover:bg-green-700 flex-1"
+                    >
+                      <CreditCard className="mr-2 w-4 h-4" />
+                      Process Payment
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        setCurrentStep(1);
+                        setCurrentWorkflowStep("registration");
+                        setSelectedPatient(null);
+                        setSelectedTests([]);
+                        setNewPatientData({
+                          firstName: "",
+                          lastName: "",
+                          email: "",
+                          phone: "",
+                          dateOfBirth: "",
+                          gender: "male",
+                          address: "",
+                          nin: ""
+                        });
+                        setSearchQuery("");
+                        setTestSearchTerm("");
+                        setIsNewPatient(true);
+                        toast({
+                          title: "Ready for Next Patient",
+                          description: "System has been reset for the next patient intake.",
+                        });
+                      }}
+                      className="bg-medical-blue hover:bg-blue-700 flex-1"
+                    >
+                      <UserPlus className="mr-2 w-4 h-4" />
+                      Process Another Patient
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
