@@ -1319,12 +1319,27 @@ export function registerRoutes(app: Express): Server {
         });
       }
 
-      // Get invoice details
-      const invoice = await storage.getInvoiceById(parseInt(invoiceId));
-      if (!invoice) {
+      // Get invoice details with patient information
+      const invoiceWithPatient = await db
+        .select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          patientId: invoices.patientId,
+          patientName: sql<string>`CONCAT(${patients.firstName}, ' ', ${patients.lastName})`,
+          totalAmount: invoices.totalAmount,
+          paymentStatus: invoices.paymentStatus,
+          tenantId: invoices.tenantId,
+          branchId: invoices.branchId
+        })
+        .from(invoices)
+        .innerJoin(patients, eq(invoices.patientId, patients.id))
+        .where(eq(invoices.id, parseInt(invoiceId)));
+
+      if (!invoiceWithPatient[0]) {
         return res.status(404).json({ message: "Invoice not found" });
       }
 
+      const invoice = invoiceWithPatient[0];
       if (invoice.paymentStatus === 'paid') {
         return res.status(400).json({ message: "Invoice already paid" });
       }

@@ -103,6 +103,7 @@ export interface IStorage {
   
   // Financial management
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  createDailyTransaction(transactionData: any): Promise<any>;
   getTodayRevenue(branchId: number): Promise<number>;
   getPaymentMethodsBreakdown(branchId: number): Promise<any[]>;
   
@@ -490,6 +491,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createDailyTransaction(transactionData: any): Promise<any> {
+    try {
+      const query = `
+        INSERT INTO daily_transactions (
+          receipt_number, patient_name, amount, payment_method,
+          receiving_bank_account_id, cashier_id, branch_id, tenant_id,
+          transaction_time, verification_status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, [
+        transactionData.receiptNumber,
+        transactionData.patientName,
+        transactionData.amount,
+        transactionData.paymentMethod,
+        transactionData.receivingBankAccountId,
+        transactionData.cashierId,
+        transactionData.branchId,
+        transactionData.tenantId,
+        transactionData.transactionTime,
+        transactionData.verificationStatus || 'verified'
+      ]);
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error creating daily transaction:', error);
+      throw error;
+    }
+  }
+
   async getTodayRevenue(branchId: number): Promise<number> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -769,17 +802,34 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async markInvoiceAsPaid(id: number, paymentData: { paymentMethod: string; paymentDetails: any; paidBy: number }): Promise<void> {
+  async getInvoiceById(id: number): Promise<Invoice | undefined> {
+    const [invoice] = await db.select().from(invoices).where(eq(invoices.id, id));
+    return invoice || undefined;
+  }
+
+  async markInvoiceAsPaid(id: number, paymentData: { paymentMethod: string; receivingBankAccountId?: number | null; paidAt: Date; receiptNumber: string }): Promise<void> {
     await db
       .update(invoices)
       .set({
         paymentStatus: 'paid',
         paymentMethod: paymentData.paymentMethod,
-        paymentDetails: paymentData.paymentDetails,
-        paidBy: paymentData.paidBy,
-        paidAt: new Date()
+        paidAt: paymentData.paidAt,
+        receiptNumber: paymentData.receiptNumber
       })
       .where(eq(invoices.id, id));
+  }
+
+  async getPatientInvoices(patientId: number, tenantId: number): Promise<Invoice[]> {
+    return await db
+      .select()
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.patientId, patientId),
+          eq(invoices.tenantId, tenantId)
+        )
+      )
+      .orderBy(desc(invoices.createdAt));
   }
 
   async generateInvoiceNumber(tenantId: number): Promise<string> {
