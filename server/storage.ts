@@ -1050,65 +1050,18 @@ export class DatabaseStorage implements IStorage {
     const defaultStartDate = startDate || new Date(new Date().setHours(0, 0, 0, 0));
     const defaultEndDate = endDate || new Date(new Date().setHours(23, 59, 59, 999));
 
-    console.log('Total conditions applied:', 2);
-
     try {
-      // Try database queries first, but provide fallback values
-      const awaitingPaymentVerification = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(patientTests)
-        .leftJoin(invoices, eq(patientTests.patientId, invoices.patientId))
-        .where(
-          and(
-            eq(patientTests.branchId, branchId),
-            eq(invoices.paymentStatus, 'paid'),
-            eq(patientTests.paymentVerified, false),
-            gte(patientTests.scheduledAt, defaultStartDate),
-            lte(patientTests.scheduledAt, defaultEndDate)
-          )
-        );
-
-      const awaitingSpecimenCollection = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(patientTests)
-        .where(
-          and(
-            eq(patientTests.branchId, branchId),
-            eq(patientTests.paymentVerified, true),
-            eq(patientTests.specimenCollected, false),
-            gte(patientTests.scheduledAt, defaultStartDate),
-            lte(patientTests.scheduledAt, defaultEndDate)
-          )
-        );
-
-      const inProcessing = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(patientTests)
-        .where(
-          and(
-            eq(patientTests.branchId, branchId),
-            eq(patientTests.specimenCollected, true),
-            eq(patientTests.processingStarted, true),
-            eq(patientTests.status, 'processing'),
-            gte(patientTests.scheduledAt, defaultStartDate),
-            lte(patientTests.scheduledAt, defaultEndDate)
-          )
-        );
-
-      const completedToday = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(patientTests)
-        .where(
-          and(
-            eq(patientTests.branchId, branchId),
-            eq(patientTests.status, 'completed'),
-            gte(patientTests.completedAt, defaultStartDate),
-            lte(patientTests.completedAt, defaultEndDate)
-          )
-        );
-
-      const totalRequests = await db
-        .select({ count: sql<number>`count(*)` })
+      // Get all patient tests for the date range and branch
+      const allTests = await db
+        .select({
+          id: patientTests.id,
+          status: patientTests.status,
+          paymentVerified: patientTests.paymentVerified,
+          specimenCollected: patientTests.specimenCollected,
+          processingStarted: patientTests.processingStarted,
+          completedAt: patientTests.completedAt,
+          scheduledAt: patientTests.scheduledAt
+        })
         .from(patientTests)
         .where(
           and(
@@ -1118,83 +1071,83 @@ export class DatabaseStorage implements IStorage {
           )
         );
 
-      // Calculate date-based sample metrics
-      const daysDiff = Math.floor((defaultEndDate.getTime() - defaultStartDate.getTime()) / (1000 * 60 * 60 * 24));
-      const isToday = daysDiff === 0 && defaultStartDate.toDateString() === new Date().toDateString();
-      
-      // Return actual counts if available, otherwise provide realistic sample data based on date range
-      const baseMultiplier = Math.max(1, daysDiff + 1);
-      
+      // Calculate metrics from actual data
+      const awaitingPaymentVerification = allTests.filter(test => 
+        test.paymentVerified === false
+      ).length;
+
+      const awaitingSpecimenCollection = allTests.filter(test => 
+        test.paymentVerified === true && test.specimenCollected === false
+      ).length;
+
+      const inProcessing = allTests.filter(test => 
+        test.specimenCollected === true && 
+        test.processingStarted === true && 
+        test.status === 'in_progress'
+      ).length;
+
+      const completedToday = allTests.filter(test => 
+        test.status === 'completed' || test.status === 'reported_and_saved'
+      ).length;
+
+      const totalRequests = allTests.length;
+
+      // Get recent completed tests with details
+      const recentCompletedTests = await db
+        .select({
+          id: patientTests.id,
+          testName: tests.name,
+          patientName: sql<string>`CONCAT(${patients.firstName}, ' ', ${patients.lastName})`,
+          completedAt: patientTests.completedAt,
+          status: patientTests.status
+        })
+        .from(patientTests)
+        .innerJoin(tests, eq(patientTests.testId, tests.id))
+        .innerJoin(patients, eq(patientTests.patientId, patients.id))
+        .where(
+          and(
+            eq(patientTests.branchId, branchId),
+            or(
+              eq(patientTests.status, 'completed'),
+              eq(patientTests.status, 'reported_and_saved')
+            ),
+            gte(patientTests.scheduledAt, defaultStartDate),
+            lte(patientTests.scheduledAt, defaultEndDate)
+          )
+        )
+        .orderBy(desc(patientTests.completedAt))
+        .limit(10);
+
       return {
-        awaitingPaymentVerification: (awaitingPaymentVerification[0]?.count || 0) > 0 
-          ? awaitingPaymentVerification[0].count.toString() 
-          : isToday ? "20" : (Math.floor(Math.random() * 15) * baseMultiplier).toString(),
-        awaitingSpecimenCollection: (awaitingSpecimenCollection[0]?.count || 0) > 0 
-          ? awaitingSpecimenCollection[0].count.toString() 
-          : isToday ? "15" : (Math.floor(Math.random() * 12) * baseMultiplier).toString(),
-        inProcessing: (inProcessing[0]?.count || 0) > 0 
-          ? inProcessing[0].count.toString() 
-          : isToday ? "8" : (Math.floor(Math.random() * 8) * baseMultiplier).toString(),
-        completedToday: (completedToday[0]?.count || 0) > 0 
-          ? completedToday[0].count.toString() 
-          : isToday ? "25" : (Math.floor(Math.random() * 20) * baseMultiplier).toString(),
-        totalRequests: (totalRequests[0]?.count || 0) > 0 
-          ? totalRequests[0].count.toString() 
-          : isToday ? "68" : (Math.floor(Math.random() * 50) * baseMultiplier).toString()
+        awaitingPaymentVerification: awaitingPaymentVerification.toString(),
+        awaitingSpecimenCollection: awaitingSpecimenCollection.toString(),
+        inProcessing: inProcessing.toString(),
+        completedToday: completedToday.toString(),
+        totalRequests: totalRequests.toString(),
+        recentCompletedTests,
+        dateRange: {
+          startDate: defaultStartDate,
+          endDate: defaultEndDate
+        }
       };
 
     } catch (error) {
-      console.error('Database query failed, using sample data:', error);
+      console.error('Error fetching laboratory metrics:', error);
       
-      // Fallback sample data based on date range
-      const daysDiff = Math.floor((defaultEndDate.getTime() - defaultStartDate.getTime()) / (1000 * 60 * 60 * 24));
-      const isToday = daysDiff === 0 && defaultStartDate.toDateString() === new Date().toDateString();
-      const baseMultiplier = Math.max(1, daysDiff + 1);
-      
+      // Return zero counts instead of fallback data
       return {
-        awaitingPaymentVerification: isToday ? "20" : (Math.floor(Math.random() * 15) * baseMultiplier).toString(),
-        awaitingSpecimenCollection: isToday ? "15" : (Math.floor(Math.random() * 12) * baseMultiplier).toString(),
-        inProcessing: isToday ? "8" : (Math.floor(Math.random() * 8) * baseMultiplier).toString(),
-        completedToday: isToday ? "25" : (Math.floor(Math.random() * 20) * baseMultiplier).toString(),
-        totalRequests: isToday ? "68" : (Math.floor(Math.random() * 50) * baseMultiplier).toString()
+        awaitingPaymentVerification: "0",
+        awaitingSpecimenCollection: "0", 
+        inProcessing: "0",
+        completedToday: "0",
+        totalRequests: "0",
+        recentCompletedTests: [],
+        dateRange: {
+          startDate: defaultStartDate,
+          endDate: defaultEndDate
+        }
       };
     }
-
-    // Get recent completed tests with details
-    const recentCompletedTests = await db
-      .select({
-        id: patientTests.id,
-        testName: tests.name,
-        patientName: sql<string>`CONCAT(${patients.firstName}, ' ', ${patients.lastName})`,
-        completedAt: patientTests.completedAt,
-        turnaroundTime: sql<number>`EXTRACT(EPOCH FROM (${patientTests.completedAt} - ${patientTests.processingStartedAt})) / 3600`
-      })
-      .from(patientTests)
-      .innerJoin(tests, eq(patientTests.testId, tests.id))
-      .innerJoin(patients, eq(patientTests.patientId, patients.id))
-      .where(
-        and(
-          eq(patientTests.branchId, branchId),
-          eq(patientTests.status, 'completed'),
-          gte(patientTests.completedAt, defaultStartDate),
-          lte(patientTests.completedAt, defaultEndDate)
-        )
-      )
-      .orderBy(desc(patientTests.completedAt))
-      .limit(10);
-
-    return {
-      awaitingPaymentVerification: awaitingPaymentVerification[0]?.count || 0,
-      awaitingSpecimenCollection: awaitingSpecimenCollection[0]?.count || 0,
-      inProcessing: inProcessing[0]?.count || 0,
-      completedToday: completedToday[0]?.count || 0,
-      totalRequests: totalRequests[0]?.count || 0,
-      recentCompletedTests,
-      dateRange: {
-        startDate: defaultStartDate,
-        endDate: defaultEndDate
-      }
-    };
   }
 
   // Financial management implementation

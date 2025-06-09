@@ -22,6 +22,10 @@ export default function LaboratoryDashboard() {
     queryKey: ["/api/laboratory/stats"],
   });
 
+  const { data: labMetrics } = useQuery({
+    queryKey: ["/api/laboratory/metrics"],
+  });
+
   const { data: pendingTests = [] } = useQuery({
     queryKey: ["/api/laboratory/pending-tests"],
   });
@@ -61,8 +65,8 @@ export default function LaboratoryDashboard() {
               <TestTube className="w-4 h-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">23</div>
-              <p className="text-xs text-green-600">↗ 12% from yesterday</p>
+              <div className="text-2xl font-bold">{labMetrics?.totalRequests || 0}</div>
+              <p className="text-xs text-green-600">↗ Total requests</p>
             </CardContent>
           </Card>
 
@@ -74,7 +78,7 @@ export default function LaboratoryDashboard() {
               <Clock className="w-4 h-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">7</div>
+              <div className="text-2xl font-bold">{labMetrics?.inProcessing || 0}</div>
               <p className="text-xs text-orange-600">In progress</p>
             </CardContent>
           </Card>
@@ -87,7 +91,7 @@ export default function LaboratoryDashboard() {
               <CheckCircle className="w-4 h-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">16</div>
+              <div className="text-2xl font-bold">{labMetrics?.completedToday || 0}</div>
               <p className="text-xs text-green-600">Ready for review</p>
             </CardContent>
           </Card>
