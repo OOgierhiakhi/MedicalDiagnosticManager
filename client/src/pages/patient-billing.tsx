@@ -178,7 +178,7 @@ export default function PatientBilling() {
   const discount = 0; // Can be implemented later
   const totalAmount = subtotal + tax - discount;
 
-  // Process payment mutation
+  // Process payment mutation for new invoices
   const processPaymentMutation = useMutation({
     mutationFn: async (billData: PatientBill) => {
       const response = await apiRequest("POST", "/api/patient-billing", {
@@ -209,11 +209,50 @@ export default function PatientBilling() {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/journal-entries"] });
       queryClient.invalidateQueries({ queryKey: ["/api/financial-summary"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/patient/${selectedPatient?.id}/unpaid`] });
     },
     onError: () => {
       toast({
         title: "Payment Failed",
         description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessingPayment(false);
+    },
+  });
+
+  // Payment processing mutation for existing invoices
+  const payExistingInvoiceMutation = useMutation({
+    mutationFn: async (paymentData: { 
+      invoiceId: number; 
+      paymentMethod: string; 
+      receivingBankAccountId: number | null 
+    }) => {
+      return apiRequest("POST", `/api/invoices/${paymentData.invoiceId}/payment`, {
+        paymentMethod: paymentData.paymentMethod,
+        receivingBankAccountId: paymentData.receivingBankAccountId
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Payment Successful",
+        description: "Invoice payment has been processed successfully.",
+      });
+      // Reset state
+      setPaymentMethod("cash");
+      setSelectedBankAccount(null);
+      setIsProcessingPayment(false);
+      setSelectedInvoice(null);
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/patient/${selectedPatient?.id}/unpaid`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment Failed", 
+        description: error.message || "Failed to process invoice payment. Please try again.",
         variant: "destructive",
       });
       setIsProcessingPayment(false);
@@ -255,6 +294,35 @@ export default function PatientBilling() {
     };
 
     processPaymentMutation.mutate(billData);
+  };
+
+  // Handle payment for existing invoices
+  const handlePayExistingInvoice = async () => {
+    if (!selectedInvoice) {
+      toast({
+        title: "No Invoice Selected",
+        description: "Please select an invoice to pay.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate bank account selection for non-cash payments
+    if (paymentMethod !== "cash" && !selectedBankAccount) {
+      toast({
+        title: "Bank Account Required",
+        description: "Please select a diagnostic center bank account for non-cash payments.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    payExistingInvoiceMutation.mutate({
+      invoiceId: selectedInvoice.id,
+      paymentMethod,
+      receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount
+    });
   };
 
   const filteredServices = serviceMasterList.filter(service =>
@@ -303,50 +371,195 @@ export default function PatientBilling() {
             </CardContent>
           </Card>
 
-          {/* Service Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Service Master List</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <Input
-                  placeholder="Search services..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredServices.map((service) => (
-                  <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-sm text-muted-foreground">{service.category}</p>
+          {/* Unpaid Invoices or Service Selection */}
+          {selectedPatient && !loadingInvoices && unpaidInvoices.length > 0 && !showServiceSelection ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Unpaid Invoices
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowServiceSelection(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Invoice
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {unpaidInvoices.map((invoice: any) => (
+                    <div
+                      key={invoice.id}
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        selectedInvoice?.id === invoice.id
+                          ? 'border-primary bg-primary/5'
+                          : 'border-muted hover:border-primary/50'
+                      }`}
+                      onClick={() => setSelectedInvoice(invoice)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium">Invoice #{invoice.invoiceNumber}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Created: {new Date(invoice.createdAt).toLocaleDateString()}
+                          </p>
+                          <div className="mt-2">
+                            <p className="text-sm font-medium">Services:</p>
+                            <div className="text-sm text-muted-foreground">
+                              {Array.isArray(invoice.tests) ? 
+                                invoice.tests.map((test: any, idx: number) => (
+                                  <span key={idx}>
+                                    {test.description || test.name || 'Service'}
+                                    {idx < invoice.tests.length - 1 ? ', ' : ''}
+                                  </span>
+                                )) : 
+                                'Services listed in invoice'
+                              }
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold">₦{parseFloat(invoice.totalAmount).toLocaleString()}</p>
+                          <Badge variant="destructive" className="mt-1">Unpaid</Badge>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">₦{service.defaultPrice.toLocaleString()}</span>
-                      <Button size="sm" onClick={() => addService(service)}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : showServiceSelection ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Service Master List
+                  {selectedPatient && unpaidInvoices.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowServiceSelection(false)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Unpaid Invoices
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <Input
+                    placeholder="Search services..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredServices.map((service) => (
+                    <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{service.name}</p>
+                        <p className="text-sm text-muted-foreground">{service.category}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">₦{service.defaultPrice.toLocaleString()}</span>
+                        <Button size="sm" onClick={() => addService(service)}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Patient</CardTitle>
+              </CardHeader>
+              <CardContent className="text-center py-8">
+                <p className="text-muted-foreground">
+                  Please select a patient to view invoices or create new bills
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Bill & Payment */}
         <div className="space-y-6">
-          {/* Selected Services */}
+          {/* Invoice Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Selected Services</CardTitle>
+              <CardTitle>
+                {selectedInvoice ? 'Invoice Details' : 'Selected Services'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedServices.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">No services selected</p>
+              {selectedInvoice ? (
+                /* Display read-only invoice details */
+                <div className="space-y-4">
+                  <div className="bg-muted p-4 rounded-lg">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <p className="font-bold text-lg">Invoice #{selectedInvoice.invoiceNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Created: {new Date(selectedInvoice.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant="destructive">Unpaid</Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium mb-2">Services:</p>
+                        <div className="space-y-2">
+                          {Array.isArray(selectedInvoice.tests) ? 
+                            selectedInvoice.tests.map((test: any, idx: number) => (
+                              <div key={idx} className="flex justify-between p-2 bg-background rounded border">
+                                <span>{test.description || test.name || 'Service'}</span>
+                                <span className="font-medium">
+                                  ₦{test.price ? parseFloat(test.price).toLocaleString() : 'N/A'}
+                                </span>
+                              </div>
+                            )) : 
+                            <p className="text-muted-foreground">Service details in invoice</p>
+                          }
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-3">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span>₦{parseFloat(selectedInvoice.subtotal || '0').toLocaleString()}</span>
+                        </div>
+                        {selectedInvoice.discountAmount && parseFloat(selectedInvoice.discountAmount) > 0 && (
+                          <div className="flex justify-between text-green-600">
+                            <span>Discount:</span>
+                            <span>-₦{parseFloat(selectedInvoice.discountAmount).toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-lg border-t mt-2 pt-2">
+                          <span>Total Amount:</span>
+                          <span>₦{parseFloat(selectedInvoice.totalAmount).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : selectedServices.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  {selectedPatient ? 
+                    (unpaidInvoices.length > 0 ? 
+                      'Select an unpaid invoice to proceed with payment' : 
+                      'No services selected'
+                    ) : 
+                    'Select a patient first'
+                  }
+                </p>
               ) : (
+                /* Display editable services for new invoices */
                 <div className="space-y-4">
                   {selectedServices.map((service) => (
                     <div key={service.id} className="border rounded-lg p-3">
@@ -397,31 +610,51 @@ export default function PatientBilling() {
             </CardContent>
           </Card>
 
-          {/* Bill Summary */}
+          {/* Payment Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Bill Summary</CardTitle>
+              <CardTitle>Payment Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span>₦{subtotal.toLocaleString()}</span>
+              {selectedInvoice ? (
+                /* Payment summary for existing invoice */
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Invoice Amount:</span>
+                    <span>₦{parseFloat(selectedInvoice.totalAmount).toLocaleString()}</span>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Amount to Pay:</span>
+                    <span>₦{parseFloat(selectedInvoice.totalAmount).toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>VAT (7.5%):</span>
-                  <span>₦{tax.toLocaleString()}</span>
+              ) : selectedServices.length > 0 ? (
+                /* Bill summary for new services */
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>₦{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>VAT (7.5%):</span>
+                    <span>₦{tax.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Discount:</span>
+                    <span>₦{discount.toLocaleString()}</span>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total Amount:</span>
+                    <span>₦{totalAmount.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>Discount:</span>
-                  <span>₦{discount.toLocaleString()}</span>
-                </div>
-                <hr />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total Amount:</span>
-                  <span>₦{totalAmount.toLocaleString()}</span>
-                </div>
-              </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  No invoice or services selected
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -500,10 +733,18 @@ export default function PatientBilling() {
           <Button
             size="lg"
             className="w-full"
-            onClick={handleProcessPayment}
-            disabled={!selectedPatient || selectedServices.length === 0 || isProcessingPayment}
+            onClick={selectedInvoice ? handlePayExistingInvoice : handleProcessPayment}
+            disabled={
+              !selectedPatient || 
+              isProcessingPayment || 
+              (selectedInvoice ? false : selectedServices.length === 0)
+            }
           >
-            {isProcessingPayment ? "Processing..." : `Create Invoice - ₦${totalAmount.toLocaleString()}`}
+            {isProcessingPayment ? "Processing..." : 
+             selectedInvoice ? 
+               `Pay Invoice - ₦${parseFloat(selectedInvoice.totalAmount).toLocaleString()}` :
+               `Create Invoice - ₦${totalAmount.toLocaleString()}`
+            }
           </Button>
         </div>
       </div>
