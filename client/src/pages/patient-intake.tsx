@@ -66,6 +66,7 @@ export default function PatientIntake() {
 
   const [paymentMethod, setPaymentMethod] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
+  const [selectedBankAccount, setSelectedBankAccount] = useState<number | null>(null);
   const [completedInvoiceId, setCompletedInvoiceId] = useState<number | null>(null);
 
   // Nigerian banks list for payment processing

@@ -34,6 +34,7 @@ interface PatientBill {
   totalAmount: number;
   paymentMethod: string;
   staffId: number;
+  receivingBankAccountId?: number | null;
 }
 
 export default function PatientBilling() {
@@ -42,6 +43,7 @@ export default function PatientBilling() {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [selectedBankAccount, setSelectedBankAccount] = useState<number | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -76,6 +78,11 @@ export default function PatientBilling() {
   const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients", user?.branchId],
     enabled: !!user?.branchId,
+  });
+
+  // Fetch organization bank accounts for non-cash payments
+  const { data: organizationBankAccounts = [] } = useQuery({
+    queryKey: ["/api/organization-bank-accounts"],
   });
 
   // Handle URL parameters for patient pre-selection
@@ -174,6 +181,7 @@ export default function PatientBilling() {
       setSelectedServices([]);
       setSelectedPatient(null);
       setPaymentMethod("cash");
+      setSelectedBankAccount(null);
       setIsProcessingPayment(false);
       
       // Invalidate queries to refresh data
@@ -200,6 +208,16 @@ export default function PatientBilling() {
       return;
     }
 
+    // Validate bank account selection for non-cash payments
+    if (paymentMethod !== "cash" && !selectedBankAccount) {
+      toast({
+        title: "Bank Account Required",
+        description: "Please select a diagnostic center bank account for non-cash payments.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessingPayment(true);
     const billData: PatientBill = {
       patientId: selectedPatient.id,
@@ -210,7 +228,8 @@ export default function PatientBilling() {
       discount,
       totalAmount,
       paymentMethod,
-      staffId: user?.id || 0
+      staffId: user?.id || 0,
+      receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount
     };
 
     processPaymentMutation.mutate(billData);
@@ -389,32 +408,69 @@ export default function PatientBilling() {
             <CardHeader>
               <CardTitle>Payment Method</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">
-                    <div className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4" />
-                      Cash Payment
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="pos">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      POS/Card Payment
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="transfer">
-                    <div className="flex items-center gap-2">
-                      <Receipt className="h-4 w-4" />
-                      Bank Transfer
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Payment Type</Label>
+                <Select value={paymentMethod} onValueChange={(value) => {
+                  setPaymentMethod(value);
+                  setSelectedBankAccount(null); // Reset bank selection when payment method changes
+                }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">
+                      <div className="flex items-center gap-2">
+                        <Banknote className="h-4 w-4" />
+                        Cash Payment
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pos">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        POS/Card Payment
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="transfer">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4" />
+                        Bank Transfer
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Bank Account Selection for Non-Cash Payments */}
+              {paymentMethod !== "cash" && (
+                <div>
+                  <Label>Diagnostic Center Bank Account *</Label>
+                  <Select 
+                    value={selectedBankAccount?.toString() || ""} 
+                    onValueChange={(value) => setSelectedBankAccount(Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select receiving bank account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organizationBankAccounts?.map((account: any) => (
+                        <SelectItem key={account.id} value={account.id.toString()}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.accountName}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.bankName} - {account.accountNumber}
+                              {account.isDefaultReceiving && " (Default)"}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select the diagnostic center account that will receive this payment
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
