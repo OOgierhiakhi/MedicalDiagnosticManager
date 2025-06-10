@@ -323,6 +323,33 @@ export const recognitionEvents = pgTable("recognition_events", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Organization Settings for system-wide configurations
+export const organizationSettings = pgTable("organization_settings", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull(),
+  
+  // Tax Settings
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull().default("0.00"), // VAT percentage (0-100)
+  vatEnabled: boolean("vat_enabled").notNull().default(false),
+  taxRegistrationNumber: text("tax_registration_number"),
+  
+  // Billing Settings
+  invoicePrefix: text("invoice_prefix").notNull().default("INV"),
+  receiptPrefix: text("receipt_prefix").notNull().default("RCP"),
+  
+  // Currency Settings
+  defaultCurrency: text("default_currency").notNull().default("NGN"),
+  currencySymbol: text("currency_symbol").notNull().default("₦"),
+  
+  // Other Settings
+  allowPriceOverride: boolean("allow_price_override").notNull().default(true),
+  requireApprovalForDiscounts: boolean("require_approval_for_discounts").notNull().default(false),
+  maxDiscountPercentage: decimal("max_discount_percentage", { precision: 5, scale: 2 }).default("10.00"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, { fields: [users.tenantId], references: [tenants.id] }),

@@ -164,11 +164,12 @@ export default function PatientBilling() {
     if (existingService) {
       updateServiceQuantity(service.id, existingService.quantity + 1);
     } else {
+      const price = parseFloat(service.defaultPrice) || 0;
       const newService: ServiceItem = {
         ...service,
         quantity: 1,
-        unitPrice: service.defaultPrice,
-        total: service.defaultPrice
+        unitPrice: price,
+        total: price
       };
       setSelectedServices([...selectedServices, newService]);
     }
@@ -183,7 +184,7 @@ export default function PatientBilling() {
     setSelectedServices(services => 
       services.map(service => 
         service.id === serviceId 
-          ? { ...service, quantity: newQuantity, total: service.unitPrice * newQuantity }
+          ? { ...service, quantity: newQuantity, total: parseFloat(service.unitPrice.toString()) * newQuantity }
           : service
       )
     );
@@ -191,10 +192,11 @@ export default function PatientBilling() {
 
   // Update service unit price (override capability)
   const updateServicePrice = (serviceId: number, newPrice: number) => {
+    const price = parseFloat(newPrice.toString()) || 0;
     setSelectedServices(services => 
       services.map(service => 
         service.id === serviceId 
-          ? { ...service, unitPrice: newPrice, total: newPrice * service.quantity }
+          ? { ...service, unitPrice: price, total: price * service.quantity }
           : service
       )
     );
@@ -205,9 +207,19 @@ export default function PatientBilling() {
     setSelectedServices(services => services.filter(s => s.id !== serviceId));
   };
 
-  // Calculate totals
+  // Fetch organization settings for VAT configuration
+  const { data: orgSettings } = useQuery({
+    queryKey: ["/api/organization-settings", user?.tenantId],
+    queryFn: async () => {
+      const response = await apiRequest(`/api/organization-settings/${user?.tenantId}`, "GET");
+      return response.json();
+    }
+  });
+
+  // Calculate totals with dynamic VAT
   const subtotal = selectedServices.reduce((sum, service) => sum + service.total, 0);
-  const tax = subtotal * 0.075; // 7.5% VAT
+  const vatRate = orgSettings?.vatEnabled ? parseFloat(orgSettings.vatRate || "0") / 100 : 0;
+  const tax = subtotal * vatRate;
   const discount = 0; // Can be implemented later
   const totalAmount = subtotal + tax - discount;
 
@@ -670,7 +682,7 @@ export default function PatientBilling() {
                     <span>₦{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>VAT (7.5%):</span>
+                    <span>VAT ({orgSettings?.vatEnabled ? `${orgSettings.vatRate}%` : '0%'}):</span>
                     <span>₦{tax.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
