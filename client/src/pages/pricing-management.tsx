@@ -101,7 +101,7 @@ export default function PricingManagement() {
   const { data: services, isLoading } = useQuery({
     queryKey: ["/api/tests"],
     queryFn: async () => {
-      const response = await apiRequest("/api/tests", "GET");
+      const response = await apiRequest("GET", "/api/tests");
       return response.json();
     }
   });
@@ -109,7 +109,7 @@ export default function PricingManagement() {
   // Create service mutation
   const createServiceMutation = useMutation({
     mutationFn: async (serviceData: any) => {
-      const response = await apiRequest("/api/tests", "POST", {
+      const response = await apiRequest("POST", "/api/tests", {
         ...serviceData,
         tenantId: user?.tenantId,
         branchId: user?.branchId || 1
@@ -137,7 +137,7 @@ export default function PricingManagement() {
   // Update service mutation
   const updateServiceMutation = useMutation({
     mutationFn: async ({ id, ...data }: any) => {
-      const response = await apiRequest(`/api/tests/${id}`, "PUT", data);
+      const response = await apiRequest("PUT", `/api/tests/${id}`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -162,7 +162,7 @@ export default function PricingManagement() {
   // Bulk price update mutation
   const bulkUpdateMutation = useMutation({
     mutationFn: async (data: { category: string; priceChangePercent: number }) => {
-      const response = await apiRequest("/api/tests/bulk-update", "PUT", data);
+      const response = await apiRequest("PUT", "/api/tests/bulk-update", data);
       return response.json();
     },
     onSuccess: (data) => {
