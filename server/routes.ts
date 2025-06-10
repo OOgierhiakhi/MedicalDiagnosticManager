@@ -805,9 +805,9 @@ export function registerRoutes(app: Express): Server {
       
       console.log('Calling storage.getPatientTestsByBranch with:', { userBranchId, testLimit, isPaidOnly, start, end });
       
-      let tests = await storage.getPatientTestsByBranch(userBranchId, testLimit, isPaidOnly, start, end);
+      let patientTestResults = await storage.getPatientTestsByBranch(userBranchId, testLimit, isPaidOnly, start, end);
 
-      res.json(tests);
+      res.json(patientTestResults);
     } catch (error) {
       console.error("Error fetching patient tests:", error);
       res.status(500).json({ message: "Internal server error" });
