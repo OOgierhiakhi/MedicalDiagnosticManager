@@ -744,6 +744,8 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Branch ID is required" });
       }
 
+      console.log('Query parameters:', { patientId, status, userBranchId });
+
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
 
@@ -769,7 +771,7 @@ export function registerRoutes(app: Express): Server {
             patientId: patientTests.patientId,
             testId: patientTests.testId,
             testName: tests.name,
-            price: tests.price,
+            testPrice: tests.price,
             category: testCategories.name,
             status: patientTests.status,
             scheduledAt: patientTests.scheduledAt,

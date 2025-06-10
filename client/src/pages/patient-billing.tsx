@@ -95,10 +95,17 @@ export default function PatientBilling() {
 
   // Fetch patient's scheduled tests that haven't been invoiced yet
   const { data: scheduledTests = [] } = useQuery({
-    queryKey: [`/api/patient-tests/scheduled/${selectedPatient?.id}`],
+    queryKey: [`/api/patient-tests`, selectedPatient?.id, 'scheduled'],
     queryFn: async () => {
       if (!selectedPatient?.id) return [];
-      const response = await apiRequest(`/api/patient-tests?patientId=${selectedPatient.id}&status=scheduled`, "GET");
+      const response = await fetch(`/api/patient-tests?patientId=${selectedPatient.id}&status=scheduled`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch scheduled tests');
       return response.json();
     },
     enabled: !!selectedPatient?.id,
