@@ -6421,12 +6421,12 @@ Medical System Procurement Team
           INSERT INTO inventory_items (
             tenant_id, category_id, item_code, name, description,
             unit_of_measure, reorder_level, minimum_stock, maximum_stock,
-            unit_cost, is_active, created_at, updated_at
+            standard_cost, is_consumable, requires_serial_number, expiry_tracking, is_active, created_at, updated_at
           ) VALUES 
             (${user.tenantId}, ${labCatId}, 'LAB-001', 'Blood Collection Tubes (EDTA)', 
-             'EDTA tubes for blood collection', 'pieces', 10, 5, 1000, 1.50, true, NOW(), NOW()),
+             'EDTA tubes for blood collection', 'pieces', 10, 5, 1000, 1.50, true, false, false, true, NOW(), NOW()),
             (${user.tenantId}, ${imgCatId}, 'RAD-002', 'Contrast Agent (Barium)', 
-             'Barium contrast for imaging', 'ml', 5, 2, 500, 25.00, true, NOW(), NOW())
+             'Barium contrast for imaging', 'ml', 5, 2, 500, 25.00, true, false, false, true, NOW(), NOW())
           ON CONFLICT (tenant_id, item_code) DO NOTHING
         `);
       }
