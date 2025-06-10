@@ -78,6 +78,10 @@ export default function PricingManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingService, setEditingService] = useState<DiagnosticService | null>(null);
   const [activeTab, setActiveTab] = useState("services");
+  
+  // Bulk operations states
+  const [bulkCategory, setBulkCategory] = useState("all");
+  const [priceChangePercent, setPriceChangePercent] = useState("");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -95,9 +99,9 @@ export default function PricingManagement() {
 
   // Fetch diagnostic services
   const { data: services, isLoading } = useQuery({
-    queryKey: ["/api/tests", user?.tenantId],
+    queryKey: ["/api/tests"],
     queryFn: async () => {
-      const response = await apiRequest(`/api/tests?tenantId=${user?.tenantId}`, "GET");
+      const response = await apiRequest("/api/tests", "GET");
       return response.json();
     }
   });
@@ -137,7 +141,7 @@ export default function PricingManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tests", user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
       setShowEditDialog(false);
       setEditingService(null);
       resetForm();
@@ -150,6 +154,30 @@ export default function PricingManagement() {
       toast({
         title: "Error",
         description: error.message || "Failed to update service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk price update mutation
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (data: { category: string; priceChangePercent: number }) => {
+      const response = await apiRequest("/api/tests/bulk-update", "PUT", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tests"] });
+      setBulkCategory("all");
+      setPriceChangePercent("");
+      toast({
+        title: "Success",
+        description: `Updated ${data.updatedCount} services successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update services",
         variant: "destructive",
       });
     },
