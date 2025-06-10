@@ -476,6 +476,50 @@ export default function AccountingDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Quick Actions for Management */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4">
+                <Link href="/referral-management">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Users className="h-4 w-4 mr-2" />
+                    Referral Providers
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <Link href="/pricing-management">
+                  <Button variant="outline" className="w-full justify-start">
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Service Pricing
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <Link href="/referral-invoices">
+                  <Button variant="outline" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Referral Invoices
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <Link href="/commission-settings">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Commission Setup
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Cash Flow Chart */}
             <Card>

@@ -195,6 +195,26 @@ export default function CenterManagerDashboard() {
       priority: 'medium',
       allowedRoles: ['admin', 'center_manager', 'branch_manager']
     },
+    {
+      title: "Referral Provider Management",
+      description: "Manage referral providers and commission rates",
+      icon: Users,
+      href: "/referral-management",
+      category: 'financial',
+      priority: 'high',
+      allowedRoles: ['admin', 'center_manager', 'branch_manager'],
+      managerOverride: true
+    },
+    {
+      title: "Service Pricing Management",
+      description: "Configure service prices and rebate settings",
+      icon: DollarSign,
+      href: "/pricing-management",
+      category: 'financial',
+      priority: 'high',
+      allowedRoles: ['admin', 'center_manager', 'branch_manager'],
+      managerOverride: true
+    },
 
     // Operational Management
     {
