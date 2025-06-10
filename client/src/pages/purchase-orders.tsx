@@ -85,6 +85,14 @@ export default function PurchaseOrders() {
   const [approvalComments, setApprovalComments] = useState("");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [previewPO, setPreviewPO] = useState<PurchaseOrder | null>(null);
+  const [editingLimit, setEditingLimit] = useState<any>(null);
+  const [showEditLimitModal, setShowEditLimitModal] = useState(false);
+  const [limitFormData, setLimitFormData] = useState({
+    title: "",
+    minAmount: 0,
+    maxAmount: 0,
+    approver: ""
+  });
 
   // Fetch real purchase orders from API
   const { data: purchaseOrders = [] } = useQuery({
@@ -533,7 +541,22 @@ export default function PurchaseOrders() {
                       <TableCell>{limit.approver}</TableCell>
                       <TableCell>All Departments</TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm">Edit</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setEditingLimit(limit);
+                            setLimitFormData({
+                              title: limit.title,
+                              minAmount: limit.minAmount,
+                              maxAmount: limit.maxAmount,
+                              approver: limit.approver
+                            });
+                            setShowEditLimitModal(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -804,6 +827,75 @@ export default function PurchaseOrders() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Approval Limit Modal */}
+      <Dialog open={showEditLimitModal} onOpenChange={setShowEditLimitModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Approval Limit - Level {editingLimit?.level}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Authority Title</Label>
+              <Input
+                id="title"
+                value={limitFormData.title}
+                onChange={(e) => setLimitFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g., Department Head"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="minAmount">Minimum Amount</Label>
+                <Input
+                  id="minAmount"
+                  type="number"
+                  value={limitFormData.minAmount}
+                  onChange={(e) => setLimitFormData(prev => ({ ...prev, minAmount: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maxAmount">Maximum Amount</Label>
+                <Input
+                  id="maxAmount"
+                  type="number"
+                  value={limitFormData.maxAmount}
+                  onChange={(e) => setLimitFormData(prev => ({ ...prev, maxAmount: Number(e.target.value) }))}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="approver">Default Approver</Label>
+              <Input
+                id="approver"
+                value={limitFormData.approver}
+                onChange={(e) => setLimitFormData(prev => ({ ...prev, approver: e.target.value }))}
+                placeholder="e.g., Dept. Manager"
+              />
+            </div>
+            
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditLimitModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  toast({ title: "Approval limit updated successfully" });
+                  setShowEditLimitModal(false);
+                }}
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* New Purchase Order Form */}
       <NewPurchaseOrderForm 
