@@ -313,7 +313,7 @@ export default function CashiersModule() {
                             variant="outline" 
                             className={getPaymentMethodColor(invoice.paymentMethod)}
                           >
-                            {invoice.paymentMethod?.toUpperCase()}
+                            {invoice.paymentMethod?.toUpperCase() || 'UNKNOWN'}
                           </Badge>
                         </div>
                         

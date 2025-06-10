@@ -881,7 +881,7 @@ export default function InvoiceManagement() {
                   <Label className="text-sm font-medium">Status</Label>
                   <div>
                     <Badge variant={selectedInvoiceForView.paymentStatus === 'paid' ? 'default' : 'secondary'}>
-                      {selectedInvoiceForView.paymentStatus?.toUpperCase()}
+                      {selectedInvoiceForView.paymentStatus?.toUpperCase() || 'UNKNOWN'}
                     </Badge>
                   </div>
                 </div>

@@ -646,7 +646,7 @@ export default function AdministrativeManagement() {
                     </div>
                     <div className="text-right flex items-center gap-3">
                       <Badge className={getAlertSeverityBadge(alert.severity)}>
-                        {alert.severity.toUpperCase()}
+                        {alert.severity?.toUpperCase() || 'UNKNOWN'}
                       </Badge>
                       <div>
                         <p className="text-sm text-gray-600">{alert.source}</p>

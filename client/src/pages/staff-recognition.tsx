@@ -734,7 +734,7 @@ export default function StaffRecognition() {
               <Card key={metric.id}>
                 <CardHeader>
                   <CardTitle className="text-base">
-                    {metric.metricType.replace('_', ' ').toUpperCase()}
+                    {metric.metricType?.replace('_', ' ')?.toUpperCase() || 'UNKNOWN METRIC'}
                   </CardTitle>
                   <CardDescription>{metric.period}</CardDescription>
                 </CardHeader>

@@ -246,7 +246,7 @@ export default function SecurityAudit() {
                 <SelectContent>
                   {eventTypes.map(type => (
                     <SelectItem key={type} value={type}>
-                      {type === 'all' ? 'All Events' : type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {type === 'all' ? 'All Events' : type?.replace(/_/g, ' ')?.replace(/\b\w/g, l => l?.toUpperCase()) || 'Unknown'}
                     </SelectItem>
                   ))}
                 </SelectContent>
