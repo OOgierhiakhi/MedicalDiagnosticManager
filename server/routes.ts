@@ -10650,14 +10650,14 @@ Medical System Procurement Team
       }
 
       const userId = parseInt(req.params.id);
-      const { username, email, firstName, lastName, role, department, isActive } = req.body;
+      const { username, email, firstName, lastName, roles, department, isActive } = req.body;
       
       const updatedUser = await storage.updateUser(userId, {
         username,
         email,
         firstName,
         lastName,
-        role,
+        roles: roles || [],
         department,
         isActive
       });
