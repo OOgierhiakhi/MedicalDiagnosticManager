@@ -12089,7 +12089,7 @@ Medical System Procurement Team
           serviceType: "Pharmacy Purchase",
           paymentMethod: "Cash",
           amount: 3200,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-8") ? "verified" : (global.flaggedIncomeEntries[8] ? "flagged" : "pending_review"),
           source: "pos_collection",
           receiptNumber: "RCP-001241",
           duplicateCheck: true,
@@ -12103,7 +12103,7 @@ Medical System Procurement Team
           serviceType: "Complete Blood Count (CBC)",
           paymentMethod: "Cash",
           amount: 15000,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-9") ? "verified" : (global.flaggedIncomeEntries[9] ? "flagged" : "pending_review"),
           source: "patient_billing",
           receiptNumber: "RCP-001242",
           duplicateCheck: false,
@@ -12118,7 +12118,7 @@ Medical System Procurement Team
           serviceType: "CT Scan",
           paymentMethod: "Bank Deposit",
           amount: 55000,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-10") ? "verified" : (global.flaggedIncomeEntries[10] ? "flagged" : "pending_review"),
           source: "bank_deposit",
           bankReference: "DEP-987654321",
           duplicateCheck: true,
@@ -12161,7 +12161,7 @@ Medical System Procurement Team
       }
 
       // Calculate dynamic summary based on current status
-      const totalEntries = 8; // Total test entries
+      const totalEntries = 10; // Total test entries
       const verifiedCount = global.verifiedIncomeEntries.size;
       const flaggedCount = Object.keys(global.flaggedIncomeEntries).length;
       const pendingCount = totalEntries - verifiedCount - flaggedCount;

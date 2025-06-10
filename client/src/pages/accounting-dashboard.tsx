@@ -39,7 +39,8 @@ import {
   Filter,
   Search,
   Home,
-  X
+  X,
+  Users
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
