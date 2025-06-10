@@ -6427,7 +6427,7 @@ Medical System Procurement Team
              'EDTA tubes for blood collection', 'pieces', 10, 5, 1000, 1.50, true, false, false, true, NOW(), NOW()),
             (${user.tenantId}, ${imgCatId}, 'RAD-002', 'Contrast Agent (Barium)', 
              'Barium contrast for imaging', 'ml', 5, 2, 500, 25.00, true, false, false, true, NOW(), NOW())
-          ON CONFLICT (tenant_id, item_code) DO NOTHING
+          ON CONFLICT (item_code) DO NOTHING
         `);
       }
 
