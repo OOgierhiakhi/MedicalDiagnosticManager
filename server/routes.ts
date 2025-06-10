@@ -742,29 +742,15 @@ export function registerRoutes(app: Express): Server {
 
       console.log('Query parameters:', { patientId, status, userBranchId, user: req.user });
 
-      if (!userBranchId) {
-        return res.status(400).json({ message: "Branch ID is required" });
-      }
-
-      const start = startDate ? new Date(startDate as string) : undefined;
-      const end = endDate ? new Date(endDate as string) : undefined;
-
-      // Handle duplicate test prevention check
-      if (patientId && today === 'true') {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
-        
-        let tests = await storage.getPatientTestsByBranch(userBranchId, 200, false, todayStart, todayEnd);
-        const patientTests = tests.filter((test: any) => test.patientId === parseInt(patientId as string));
-        return res.json(patientTests);
-      }
-
-      // Handle specific patient test requests for billing
+      // Handle specific patient test requests for billing FIRST - before general branch validation
       if (patientId && status) {
-        console.log('Fetching patient tests for billing:', { patientId, status, userBranchId, tenantId: req.user?.tenantId });
+        console.log('Fetching patient tests for billing:', { patientId, status, userBranchId: req.user?.branchId, tenantId: req.user?.tenantId });
         
+        const effectiveBranchId = userBranchId || req.user?.branchId;
+        if (!effectiveBranchId) {
+          return res.status(400).json({ message: "Branch ID is required for patient test queries" });
+        }
+
         try {
           const patientTestsWithDetails = await db
             .select({
@@ -786,7 +772,70 @@ export function registerRoutes(app: Express): Server {
               and(
                 eq(patientTests.patientId, parseInt(patientId as string)),
                 eq(patientTests.status, status as string),
-                eq(patientTests.branchId, userBranchId),
+                eq(patientTests.branchId, effectiveBranchId),
+                eq(patientTests.tenantId, req.user?.tenantId || 1)
+              )
+            )
+            .orderBy(desc(patientTests.scheduledAt));
+
+          console.log('Found patient tests:', patientTestsWithDetails);
+          return res.json(patientTestsWithDetails);
+        } catch (error) {
+          console.error('Error fetching patient tests:', error);
+          return res.status(500).json({ message: 'Error fetching patient tests' });
+        }
+      }
+
+      if (!userBranchId) {
+        return res.status(400).json({ message: "Branch ID is required" });
+      }
+
+      const start = startDate ? new Date(startDate as string) : undefined;
+      const end = endDate ? new Date(endDate as string) : undefined;
+
+      // Handle duplicate test prevention check
+      if (patientId && today === 'true') {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        let tests = await storage.getPatientTestsByBranch(userBranchId, 200, false, todayStart, todayEnd);
+        const patientTests = tests.filter((test: any) => test.patientId === parseInt(patientId as string));
+        return res.json(patientTests);
+      }
+
+      // Handle specific patient test requests for billing - moved before branch ID check
+      if (patientId && status) {
+        console.log('Fetching patient tests for billing:', { patientId, status, userBranchId: req.user?.branchId, tenantId: req.user?.tenantId });
+        
+        const effectiveBranchId = userBranchId || req.user?.branchId;
+        if (!effectiveBranchId) {
+          return res.status(400).json({ message: "Branch ID is required for patient test queries" });
+        }
+
+        try {
+          const patientTestsWithDetails = await db
+            .select({
+              id: patientTests.id,
+              patientId: patientTests.patientId,
+              testId: patientTests.testId,
+              testName: tests.name,
+              testPrice: tests.price,
+              category: testCategories.name,
+              status: patientTests.status,
+              scheduledAt: patientTests.scheduledAt,
+              branchId: patientTests.branchId,
+              tenantId: patientTests.tenantId
+            })
+            .from(patientTests)
+            .leftJoin(tests, eq(patientTests.testId, tests.id))
+            .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
+            .where(
+              and(
+                eq(patientTests.patientId, parseInt(patientId as string)),
+                eq(patientTests.status, status as string),
+                eq(patientTests.branchId, effectiveBranchId),
                 eq(patientTests.tenantId, req.user?.tenantId || 1)
               )
             )
