@@ -11968,166 +11968,32 @@ Medical System Procurement Team
       }
 
       const { source, status } = req.query;
+      const user = req.user!;
 
-      // Initialize global status tracking
-      if (!global.verifiedIncomeEntries) {
-        global.verifiedIncomeEntries = new Set();
-      }
-      if (!global.flaggedIncomeEntries) {
-        global.flaggedIncomeEntries = {};
-      }
+      // Fetch actual daily transactions from database
+      const dailyTransactions = await storage.getDailyTransactions(user.tenantId, user.branchId);
 
-      // Generate comprehensive dummy test data for income verification
-      const testIncomeEntries = [
-        {
-          id: 1,
-          transactionDate: "2025-06-07T08:30:00Z",
-          invoiceNumber: "INV-2025-001234",
-          patientName: "Adebayo Ogundimu",
-          serviceType: "Complete Blood Count (CBC)",
-          paymentMethod: "Cash",
-          amount: 15000,
-          status: global.verifiedIncomeEntries.has("income-1") ? "verified" : "pending_review",
-          source: "patient_billing",
-          receiptNumber: "RCP-001234",
-          duplicateCheck: true,
-          balanceVerified: true
-        },
-        {
-          id: 2,
-          transactionDate: "2025-06-07T09:15:00Z",
-          invoiceNumber: "INV-2025-001235",
-          patientName: "Fatima Abdul Rahman",
-          serviceType: "Chest X-Ray",
-          paymentMethod: "Bank Transfer",
-          amount: 12000,
-          status: global.verifiedIncomeEntries.has("income-2") ? "verified" : (global.flaggedIncomeEntries[2] ? "flagged" : "pending_review"),
-          source: "pos_collection",
-          bankReference: "TXN-789456123",
-          duplicateCheck: true,
-          balanceVerified: false
-        },
-        {
-          id: 3,
-          transactionDate: "2025-06-07T10:45:00Z",
-          invoiceNumber: "INV-2025-001236",
-          patientName: "Chinedu Okwu",
-          serviceType: "ECG Consultation",
-          paymentMethod: "POS Card",
-          amount: 8500,
-          status: global.verifiedIncomeEntries.has("income-3") ? "verified" : (global.flaggedIncomeEntries[3] ? "flagged" : "pending_review"),
-          source: "patient_billing",
-          receiptNumber: "RCP-001236",
-          duplicateCheck: false,
-          balanceVerified: true
-        },
-        {
-          id: 4,
-          transactionDate: "2025-06-07T11:20:00Z",
-          invoiceNumber: "INV-2025-001237",
-          patientName: "Blessing Nwosu",
-          serviceType: "Ultrasound Scan",
-          paymentMethod: "Cash",
-          amount: 20000,
-          status: global.verifiedIncomeEntries.has("income-4") ? "verified" : (global.flaggedIncomeEntries[4] ? "flagged" : "pending_review"),
-          source: "patient_billing",
-          receiptNumber: "RCP-001237",
-          duplicateCheck: true,
-          balanceVerified: true
-        },
-        {
-          id: 5,
-          transactionDate: "2025-06-06T16:30:00Z",
-          invoiceNumber: "INV-2025-001238",
-          patientName: "Mohammed Hassan",
-          serviceType: "Laboratory Package",
-          paymentMethod: "Bank Deposit",
-          amount: 45000,
-          status: global.verifiedIncomeEntries.has("income-5") ? "verified" : (global.flaggedIncomeEntries[5] ? "flagged" : "pending_review"),
-          source: "bank_deposit",
-          bankReference: "DEP-654321987",
-          duplicateCheck: true,
-          balanceVerified: true
-        },
-        {
-          id: 6,
-          transactionDate: "2025-06-06T14:15:00Z",
-          invoiceNumber: "INV-2025-001239",
-          patientName: "Grace Akinyemi",
-          serviceType: "Consultation Fee",
-          paymentMethod: "POS Card",
-          amount: 7500,
-          status: "flagged",
-          source: "pos_collection",
-          receiptNumber: "RCP-001239",
-          duplicateCheck: false,
-          balanceVerified: false,
-          notes: "Potential duplicate transaction detected"
-        },
-        {
-          id: 7,
-          transactionDate: "2025-06-06T12:00:00Z",
-          invoiceNumber: "INV-2025-001240",
-          patientName: "Tunde Adeleye",
-          serviceType: "MRI Scan",
-          paymentMethod: "Bank Transfer",
-          amount: 85000,
-          status: "posted",
-          source: "patient_billing",
-          bankReference: "TXN-111222333",
-          verifiedBy: "admin",
-          verifiedAt: "2025-06-06T13:00:00Z",
-          glAccount: "41200",
-          duplicateCheck: true,
-          balanceVerified: true
-        },
-        {
-          id: 8,
-          transactionDate: "2025-06-07T07:45:00Z",
-          invoiceNumber: "INV-2025-001241",
-          patientName: "Aisha Bello",
-          serviceType: "Pharmacy Purchase",
-          paymentMethod: "Cash",
-          amount: 3200,
-          status: global.verifiedIncomeEntries.has("income-8") ? "verified" : (global.flaggedIncomeEntries[8] ? "flagged" : "pending_review"),
-          source: "pos_collection",
-          receiptNumber: "RCP-001241",
-          duplicateCheck: true,
-          balanceVerified: true
-        },
-        {
-          id: 9,
-          transactionDate: "2025-06-07T13:30:00Z",
-          invoiceNumber: "INV-2025-001234",
-          patientName: "Adebayo Ogundimu",
-          serviceType: "Complete Blood Count (CBC)",
-          paymentMethod: "Cash",
-          amount: 15000,
-          status: global.verifiedIncomeEntries.has("income-9") ? "verified" : (global.flaggedIncomeEntries[9] ? "flagged" : "pending_review"),
-          source: "patient_billing",
-          receiptNumber: "RCP-001242",
-          duplicateCheck: false,
-          balanceVerified: true,
-          notes: "Potential duplicate - same patient, amount, service"
-        },
-        {
-          id: 10,
-          transactionDate: "2025-06-07T15:00:00Z",
-          invoiceNumber: "INV-2025-001243",
-          patientName: "Emeka Okafor",
-          serviceType: "CT Scan",
-          paymentMethod: "Bank Deposit",
-          amount: 55000,
-          status: global.verifiedIncomeEntries.has("income-10") ? "verified" : (global.flaggedIncomeEntries[10] ? "flagged" : "pending_review"),
-          source: "bank_deposit",
-          bankReference: "DEP-987654321",
-          duplicateCheck: true,
-          balanceVerified: false
-        }
-      ];
+      // Transform daily transactions to income entries format
+      const incomeEntries = dailyTransactions.map(tx => ({
+        id: tx.id,
+        transactionDate: tx.transactionTime.toISOString(),
+        invoiceNumber: `INV-${tx.receiptNumber.replace('RCP-', '')}`,
+        patientName: tx.patientName,
+        serviceType: "Medical Services",
+        paymentMethod: tx.paymentMethod,
+        amount: Number(tx.amount),
+        status: tx.verificationStatus === "pending" ? "pending_review" : tx.verificationStatus,
+        source: tx.paymentMethod === "cash" ? "patient_billing" : "pos_collection",
+        receiptNumber: tx.receiptNumber,
+        duplicateCheck: true,
+        balanceVerified: tx.verificationStatus === "verified",
+        verificationNotes: tx.verificationNotes,
+        verifiedBy: tx.verifiedBy,
+        verifiedAt: tx.verifiedAt
+      }));
 
       // Filter by source if specified
-      let filteredEntries = testIncomeEntries;
+      let filteredEntries = incomeEntries;
       if (source && source !== 'all') {
         filteredEntries = filteredEntries.filter(entry => entry.source === source);
       }
