@@ -648,6 +648,18 @@ export class DatabaseStorage implements IStorage {
       .orderBy(referralProviders.name);
   }
 
+  async updateReferralProvider(id: number, updates: Partial<ReferralProvider>): Promise<ReferralProvider> {
+    const [updatedProvider] = await db
+      .update(referralProviders)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(referralProviders.id, id))
+      .returning();
+    return updatedProvider;
+  }
+
   async createReferralProvider(provider: { name: string; tenantId: number; requiresCommissionSetup: boolean }): Promise<ReferralProvider> {
     const [newProvider] = await db
       .insert(referralProviders)

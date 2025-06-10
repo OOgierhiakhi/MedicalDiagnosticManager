@@ -1219,7 +1219,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Invalid provider ID" });
       }
 
-      const { name, contactPerson, email, phone, address, commissionRate, status } = req.body;
+      const { name, contactPerson, email, phone, address, commissionRate, bankName, accountNumber, accountName, bankCode, sortCode, swiftCode } = req.body;
       
       if (!name) {
         return res.status(400).json({ message: "Name is required" });
@@ -1232,7 +1232,12 @@ export function registerRoutes(app: Express): Server {
         phone: phone || null,
         address: address || null,
         commissionRate: commissionRate || null,
-        status: status || 'active'
+        bankName: bankName || null,
+        accountNumber: accountNumber || null,
+        accountName: accountName || null,
+        bankCode: bankCode || null,
+        sortCode: sortCode || null,
+        swiftCode: swiftCode || null
       });
 
       res.json(updatedProvider);
