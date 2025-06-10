@@ -93,6 +93,17 @@ export default function PatientBilling() {
     enabled: !!selectedPatient?.id,
   });
 
+  // Fetch patient's scheduled tests that haven't been invoiced yet
+  const { data: scheduledTests = [] } = useQuery({
+    queryKey: [`/api/patient-tests/scheduled/${selectedPatient?.id}`],
+    queryFn: async () => {
+      if (!selectedPatient?.id) return [];
+      const response = await apiRequest(`/api/patient-tests?patientId=${selectedPatient.id}&status=scheduled`, "GET");
+      return response.json();
+    },
+    enabled: !!selectedPatient?.id,
+  });
+
   // Handle URL parameters for patient pre-selection
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -111,19 +122,34 @@ export default function PatientBilling() {
     }
   }, [patients, toast]);
 
-  // Auto-select the latest unpaid invoice when patient is selected
+  // Auto-select the latest unpaid invoice or load scheduled tests when patient is selected
   useEffect(() => {
     if (selectedPatient && unpaidInvoices.length > 0 && !selectedInvoice) {
       // Default to the most recent unpaid invoice
       const latestInvoice = unpaidInvoices[unpaidInvoices.length - 1];
       setSelectedInvoice(latestInvoice);
       setShowServiceSelection(false); // Don't show service selection by default
-    } else if (selectedPatient && unpaidInvoices.length === 0) {
-      // No unpaid invoices, allow service selection for new invoice
+    } else if (selectedPatient && unpaidInvoices.length === 0 && scheduledTests.length > 0) {
+      // No unpaid invoices but has scheduled tests - automatically populate services
+      const serviceItems = scheduledTests.map((test: any) => ({
+        id: test.testId,
+        name: test.testName,
+        category: test.category || 'Laboratory',
+        defaultPrice: test.price || 0,
+        quantity: 1,
+        unitPrice: test.price || 0,
+        total: test.price || 0
+      }));
+      setSelectedServices(serviceItems);
+      setShowServiceSelection(false);
+      setSelectedInvoice(null);
+    } else if (selectedPatient && unpaidInvoices.length === 0 && scheduledTests.length === 0) {
+      // No unpaid invoices and no scheduled tests, allow service selection for new invoice
       setShowServiceSelection(true);
       setSelectedInvoice(null);
+      setSelectedServices([]);
     }
-  }, [selectedPatient, unpaidInvoices, selectedInvoice]);
+  }, [selectedPatient, unpaidInvoices, scheduledTests, selectedInvoice]);
 
   // Add service to bill
   const addService = (service: any) => {

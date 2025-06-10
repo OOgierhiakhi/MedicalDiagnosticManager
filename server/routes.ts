@@ -735,7 +735,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { branchId, paidOnly, startDate, endDate, limit, patientId, today } = req.query;
+      const { branchId, paidOnly, startDate, endDate, limit, patientId, today, status } = req.query;
       const userBranchId = branchId ? parseInt(branchId as string) : req.user?.branchId;
       const testLimit = limit ? parseInt(limit as string) : 50;
       const isPaidOnly = paidOnly === 'true';
@@ -757,6 +757,36 @@ export function registerRoutes(app: Express): Server {
         let tests = await storage.getPatientTestsByBranch(userBranchId, 200, false, todayStart, todayEnd);
         const patientTests = tests.filter((test: any) => test.patientId === parseInt(patientId as string));
         return res.json(patientTests);
+      }
+
+      // Handle specific patient test requests for billing
+      if (patientId && status) {
+        const patientTestsWithDetails = await db
+          .select({
+            id: patientTests.id,
+            patientId: patientTests.patientId,
+            testId: patientTests.testId,
+            testName: testCategories.name,
+            price: testCategories.price,
+            category: testCategories.category,
+            status: patientTests.status,
+            scheduledAt: patientTests.scheduledAt,
+            branchId: patientTests.branchId,
+            tenantId: patientTests.tenantId
+          })
+          .from(patientTests)
+          .leftJoin(testCategories, eq(patientTests.testId, testCategories.id))
+          .where(
+            and(
+              eq(patientTests.patientId, parseInt(patientId as string)),
+              eq(patientTests.status, status as string),
+              eq(patientTests.branchId, userBranchId),
+              eq(patientTests.tenantId, req.user?.tenantId || 1)
+            )
+          )
+          .orderBy(desc(patientTests.scheduledAt));
+
+        return res.json(patientTestsWithDetails);
       }
       
       console.log('Date filter debug:', { 
