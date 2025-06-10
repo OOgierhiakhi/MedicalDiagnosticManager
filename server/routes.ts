@@ -740,11 +740,11 @@ export function registerRoutes(app: Express): Server {
       const testLimit = limit ? parseInt(limit as string) : 50;
       const isPaidOnly = paidOnly === 'true';
 
+      console.log('Query parameters:', { patientId, status, userBranchId, user: req.user });
+
       if (!userBranchId) {
         return res.status(400).json({ message: "Branch ID is required" });
       }
-
-      console.log('Query parameters:', { patientId, status, userBranchId });
 
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
@@ -765,34 +765,39 @@ export function registerRoutes(app: Express): Server {
       if (patientId && status) {
         console.log('Fetching patient tests for billing:', { patientId, status, userBranchId, tenantId: req.user?.tenantId });
         
-        const patientTestsWithDetails = await db
-          .select({
-            id: patientTests.id,
-            patientId: patientTests.patientId,
-            testId: patientTests.testId,
-            testName: tests.name,
-            testPrice: tests.price,
-            category: testCategories.name,
-            status: patientTests.status,
-            scheduledAt: patientTests.scheduledAt,
-            branchId: patientTests.branchId,
-            tenantId: patientTests.tenantId
-          })
-          .from(patientTests)
-          .leftJoin(tests, eq(patientTests.testId, tests.id))
-          .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
-          .where(
-            and(
-              eq(patientTests.patientId, parseInt(patientId as string)),
-              eq(patientTests.status, status as string),
-              eq(patientTests.branchId, userBranchId),
-              eq(patientTests.tenantId, req.user?.tenantId || 1)
+        try {
+          const patientTestsWithDetails = await db
+            .select({
+              id: patientTests.id,
+              patientId: patientTests.patientId,
+              testId: patientTests.testId,
+              testName: tests.name,
+              testPrice: tests.price,
+              category: testCategories.name,
+              status: patientTests.status,
+              scheduledAt: patientTests.scheduledAt,
+              branchId: patientTests.branchId,
+              tenantId: patientTests.tenantId
+            })
+            .from(patientTests)
+            .leftJoin(tests, eq(patientTests.testId, tests.id))
+            .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
+            .where(
+              and(
+                eq(patientTests.patientId, parseInt(patientId as string)),
+                eq(patientTests.status, status as string),
+                eq(patientTests.branchId, userBranchId),
+                eq(patientTests.tenantId, req.user?.tenantId || 1)
+              )
             )
-          )
-          .orderBy(desc(patientTests.scheduledAt));
+            .orderBy(desc(patientTests.scheduledAt));
 
-        console.log('Found patient tests:', patientTestsWithDetails);
-        return res.json(patientTestsWithDetails);
+          console.log('Found patient tests:', patientTestsWithDetails);
+          return res.json(patientTestsWithDetails);
+        } catch (error) {
+          console.error('Error fetching patient tests:', error);
+          return res.status(500).json({ message: 'Error fetching patient tests' });
+        }
       }
       
       console.log('Date filter debug:', { 
