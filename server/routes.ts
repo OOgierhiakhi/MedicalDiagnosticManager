@@ -35,7 +35,8 @@ import {
   referralProviders,
   journalEntries,
   journalEntryLineItems,
-  insertBankDepositSchema
+  insertBankDepositSchema,
+  organizationSettings
 } from "@shared/schema";
 import { 
   eq, 
@@ -10138,6 +10139,69 @@ Medical System Procurement Team
       res.json(metrics);
     } catch (error: any) {
       console.error("Error fetching approval metrics:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get organization settings
+  app.get("/api/organization-settings/:tenantId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const tenantId = parseInt(req.params.tenantId);
+      const result = await db.select()
+        .from(organizationSettings)
+        .where(eq(organizationSettings.tenantId, tenantId))
+        .limit(1);
+
+      if (result.length === 0) {
+        // Create default settings if none exist
+        const defaultSettings = await db.insert(organizationSettings)
+          .values({
+            tenantId,
+            vatRate: "0.00",
+            vatEnabled: false,
+            defaultCurrency: "NGN",
+            currencySymbol: "₦"
+          })
+          .returning();
+        
+        return res.json(defaultSettings[0]);
+      }
+
+      res.json(result[0]);
+    } catch (error: any) {
+      console.error("Error fetching organization settings:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update organization settings
+  app.put("/api/organization-settings/:tenantId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const tenantId = parseInt(req.params.tenantId);
+      const { vatRate, vatEnabled, taxRegistrationNumber, allowPriceOverride } = req.body;
+
+      const result = await db.update(organizationSettings)
+        .set({
+          vatRate: vatRate?.toString(),
+          vatEnabled,
+          taxRegistrationNumber,
+          allowPriceOverride,
+          updatedAt: new Date()
+        })
+        .where(eq(organizationSettings.tenantId, tenantId))
+        .returning();
+
+      res.json(result[0]);
+    } catch (error: any) {
+      console.error("Error updating organization settings:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
