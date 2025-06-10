@@ -11969,6 +11969,14 @@ Medical System Procurement Team
 
       const { source, status } = req.query;
 
+      // Initialize global status tracking
+      if (!global.verifiedIncomeEntries) {
+        global.verifiedIncomeEntries = new Set();
+      }
+      if (!global.flaggedIncomeEntries) {
+        global.flaggedIncomeEntries = {};
+      }
+
       // Generate comprehensive dummy test data for income verification
       const testIncomeEntries = [
         {
@@ -11979,7 +11987,7 @@ Medical System Procurement Team
           serviceType: "Complete Blood Count (CBC)",
           paymentMethod: "Cash",
           amount: 15000,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-1") ? "verified" : "pending_review",
           source: "patient_billing",
           receiptNumber: "RCP-001234",
           duplicateCheck: true,
@@ -11993,7 +12001,7 @@ Medical System Procurement Team
           serviceType: "Chest X-Ray",
           paymentMethod: "Bank Transfer",
           amount: 12000,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-2") ? "verified" : (global.flaggedIncomeEntries[2] ? "flagged" : "pending_review"),
           source: "pos_collection",
           bankReference: "TXN-789456123",
           duplicateCheck: true,
@@ -12007,7 +12015,7 @@ Medical System Procurement Team
           serviceType: "ECG Consultation",
           paymentMethod: "POS Card",
           amount: 8500,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-3") ? "verified" : (global.flaggedIncomeEntries[3] ? "flagged" : "pending_review"),
           source: "patient_billing",
           receiptNumber: "RCP-001236",
           duplicateCheck: false,
@@ -12021,12 +12029,9 @@ Medical System Procurement Team
           serviceType: "Ultrasound Scan",
           paymentMethod: "Cash",
           amount: 20000,
-          status: "verified",
+          status: global.verifiedIncomeEntries.has("income-4") ? "verified" : (global.flaggedIncomeEntries[4] ? "flagged" : "pending_review"),
           source: "patient_billing",
           receiptNumber: "RCP-001237",
-          verifiedBy: "admin",
-          verifiedAt: "2025-06-07T11:30:00Z",
-          glAccount: "41200",
           duplicateCheck: true,
           balanceVerified: true
         },
@@ -12038,7 +12043,7 @@ Medical System Procurement Team
           serviceType: "Laboratory Package",
           paymentMethod: "Bank Deposit",
           amount: 45000,
-          status: "pending_review",
+          status: global.verifiedIncomeEntries.has("income-5") ? "verified" : (global.flaggedIncomeEntries[5] ? "flagged" : "pending_review"),
           source: "bank_deposit",
           bankReference: "DEP-654321987",
           duplicateCheck: true,
@@ -12147,17 +12152,30 @@ Medical System Procurement Team
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Calculate summary from test data
+      // Initialize global status tracking
+      if (!global.verifiedIncomeEntries) {
+        global.verifiedIncomeEntries = new Set();
+      }
+      if (!global.flaggedIncomeEntries) {
+        global.flaggedIncomeEntries = {};
+      }
+
+      // Calculate dynamic summary based on current status
+      const totalEntries = 8; // Total test entries
+      const verifiedCount = global.verifiedIncomeEntries.size;
+      const flaggedCount = Object.keys(global.flaggedIncomeEntries).length;
+      const pendingCount = totalEntries - verifiedCount - flaggedCount;
+
       const summary = {
-        totalPendingReview: 6,
-        totalPendingAmount: 163200,
-        verifiedToday: 1,
-        flaggedEntries: 1,
+        totalPendingReview: pendingCount,
+        totalPendingAmount: pendingCount * 20000, // Approximate pending amount
+        verifiedToday: verifiedCount,
+        flaggedEntries: flaggedCount,
         duplicateCount: 2,
         unbalancedCount: 2
       };
 
-      console.log("Generated income verification summary");
+      console.log("Generated dynamic income verification summary:", summary);
       res.json(summary);
     } catch (error: any) {
       console.error("Error generating summary:", error);
