@@ -119,7 +119,7 @@ export default function ReferralManagement() {
   // Update provider mutation
   const updateProviderMutation = useMutation({
     mutationFn: async ({ id, ...data }: any) => {
-      const response = await apiRequest(`/api/referral-providers/${id}`, "PUT", data);
+      const response = await apiRequest("PUT", `/api/referral-providers/${id}`, data);
       return response.json();
     },
     onSuccess: () => {

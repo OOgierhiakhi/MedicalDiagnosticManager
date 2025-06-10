@@ -73,6 +73,7 @@ export default function PricingManagement() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -100,20 +101,14 @@ export default function PricingManagement() {
   // Fetch diagnostic services
   const { data: services, isLoading } = useQuery({
     queryKey: ["/api/tests"],
-    enabled: serviceCategories.length > 0, // Wait for categories to load first
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/tests");
       const data = await response.json();
-      // Map API response to frontend format with proper category names
-      return data.map((service: any) => {
-        const categoryName = serviceCategories.find(cat => cat.id === service.categoryId?.toString())?.name || 'Unknown';
-        return {
-          ...service,
-          category: categoryName,
-          categoryId: service.categoryId,
-          status: service.isActive ? 'active' : 'inactive'
-        };
-      });
+      // Map API response to frontend format - API already returns category names
+      return data.map((service: any) => ({
+        ...service,
+        status: service.isActive ? 'active' : 'inactive'
+      }));
     }
   });
 
@@ -413,9 +408,26 @@ export default function PricingManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {serviceCategories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                      {Array.from(new Set(services?.map((s: DiagnosticService) => s.category))).map(category => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      <SelectItem value="Laboratory">Laboratory</SelectItem>
+                      <SelectItem value="Radiology">Radiology</SelectItem>
+                      <SelectItem value="Cardiology">Cardiology</SelectItem>
+                      <SelectItem value="Ultrasound">Ultrasound</SelectItem>
+                      <SelectItem value="CT">CT Scan</SelectItem>
+                      <SelectItem value="Microbiology">Microbiology</SelectItem>
+                      <SelectItem value="Packages">Packages</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
