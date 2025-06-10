@@ -12018,30 +12018,30 @@ Medical System Procurement Team
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Initialize global status tracking
-      if (!global.verifiedIncomeEntries) {
-        global.verifiedIncomeEntries = new Set();
-      }
-      if (!global.flaggedIncomeEntries) {
-        global.flaggedIncomeEntries = {};
-      }
+      const user = req.user!;
 
-      // Calculate dynamic summary based on current status
-      const totalEntries = 10; // Total test entries
-      const verifiedCount = global.verifiedIncomeEntries.size;
-      const flaggedCount = Object.keys(global.flaggedIncomeEntries).length;
-      const pendingCount = totalEntries - verifiedCount - flaggedCount;
+      // Fetch actual daily transactions from database
+      const dailyTransactions = await storage.getDailyTransactions(user.tenantId, user.branchId);
+
+      // Calculate summary from actual database data
+      const pendingCount = dailyTransactions.filter(tx => tx.verificationStatus === "pending").length;
+      const verifiedCount = dailyTransactions.filter(tx => tx.verificationStatus === "verified").length;
+      const flaggedCount = dailyTransactions.filter(tx => tx.verificationStatus === "flagged").length;
+      
+      const pendingAmount = dailyTransactions
+        .filter(tx => tx.verificationStatus === "pending")
+        .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
       const summary = {
         totalPendingReview: pendingCount,
-        totalPendingAmount: pendingCount * 20000, // Approximate pending amount
+        totalPendingAmount: pendingAmount,
         verifiedToday: verifiedCount,
         flaggedEntries: flaggedCount,
-        duplicateCount: 2,
-        unbalancedCount: 2
+        duplicateCount: 0, // Could be calculated based on business logic
+        unbalancedCount: 0  // Could be calculated based on business logic
       };
 
-      console.log("Generated dynamic income verification summary:", summary);
+      console.log("Generated income verification summary from database:", summary);
       res.json(summary);
     } catch (error: any) {
       console.error("Error generating summary:", error);
@@ -12060,53 +12060,33 @@ Medical System Procurement Team
       const { glAccount, notes } = req.body;
       const user = req.user!;
 
-      // Simulate posting to general ledger
-      console.log(`Accountant ${user.username} verified income entry ${id}`);
-      console.log(`Posted to GL Account: ${glAccount}`);
-      console.log(`Verification notes: ${notes}`);
+      const transactionId = parseInt(id);
+
+      // Check if transaction exists and current status
+      const dailyTransactions = await storage.getDailyTransactions(user.tenantId, user.branchId);
+      const transaction = dailyTransactions.find(tx => tx.id === transactionId);
       
-      // Check for duplicate postings prevention
-      if (!global.verifiedIncomeEntries) {
-        global.verifiedIncomeEntries = new Set();
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
       }
 
-      const entryKey = `income-${id}`;
-      if (global.verifiedIncomeEntries.has(entryKey)) {
+      if (transaction.verificationStatus === "verified") {
         return res.status(400).json({ 
           message: "Error: This income entry has already been posted to the general ledger. Double posting is not allowed." 
         });
       }
 
-      // Mark as verified and posted
-      global.verifiedIncomeEntries.add(entryKey);
+      // Update transaction status to verified in database
+      await storage.updateTransactionVerificationStatus(
+        transactionId, 
+        "verified", 
+        user.id, 
+        notes
+      );
 
-      // Create journal entry record
-      const journalEntry = {
-        id: Date.now(),
-        date: new Date().toISOString(),
-        description: `Income verification - Entry ${id}`,
-        reference: `INCOME-${id}`,
-        entries: [
-          {
-            account: "11000", // Cash/Bank account (debit)
-            description: "Cash received from patient services",
-            debit: req.body.amount || 15000,
-            credit: 0
-          },
-          {
-            account: glAccount, // Revenue account (credit)
-            description: "Patient service revenue",
-            debit: 0,
-            credit: req.body.amount || 15000
-          }
-        ],
-        createdBy: user.username,
-        verifiedBy: user.username,
-        status: "posted",
-        notes: notes
-      };
-
-      console.log("Journal entry created:", journalEntry);
+      console.log(`Accountant ${user.username} verified income entry ${id}`);
+      console.log(`Posted to GL Account: ${glAccount}`);
+      console.log(`Verification notes: ${notes}`);
 
       res.json({
         success: true,
@@ -12114,7 +12094,7 @@ Medical System Procurement Team
         verifiedBy: user.username,
         verifiedAt: new Date().toISOString(),
         glAccount: glAccount,
-        journalEntryId: journalEntry.id
+        transactionId: transactionId
       });
     } catch (error: any) {
       console.error("Error verifying income entry:", error);
@@ -12133,18 +12113,26 @@ Medical System Procurement Team
       const { reason } = req.body;
       const user = req.user!;
 
-      console.log(`Accountant ${user.username} flagged income entry ${id}`);
-      console.log(`Flag reason: ${reason}`);
+      const transactionId = parseInt(id);
 
-      if (!global.flaggedIncomeEntries) {
-        global.flaggedIncomeEntries = {};
+      // Check if transaction exists and current status
+      const dailyTransactions = await storage.getDailyTransactions(user.tenantId, user.branchId);
+      const transaction = dailyTransactions.find(tx => tx.id === transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
       }
 
-      global.flaggedIncomeEntries[parseInt(id)] = {
-        reason: reason,
-        flaggedBy: user.username,
-        flaggedAt: new Date().toISOString()
-      };
+      // Update transaction status to flagged in database
+      await storage.updateTransactionVerificationStatus(
+        transactionId, 
+        "flagged", 
+        user.id, 
+        reason
+      );
+
+      console.log(`Accountant ${user.username} flagged income entry ${id}`);
+      console.log(`Flag reason: ${reason}`);
 
       res.json({
         success: true,

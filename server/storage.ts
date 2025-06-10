@@ -29,6 +29,7 @@ import {
   journalEntries,
   journalEntryLineItems,
   reportTemplates,
+  dailyTransactions,
   type User, 
   type InsertUser,
   type Tenant,
@@ -2903,6 +2904,29 @@ export class DatabaseStorage implements IStorage {
         permissions: ['view_assigned_tasks']
       }
     ];
+  }
+
+  // Update daily transaction verification status
+  async updateTransactionVerificationStatus(
+    transactionId: number, 
+    status: 'pending' | 'verified' | 'flagged', 
+    verifiedBy?: number,
+    verificationNotes?: string
+  ): Promise<void> {
+    try {
+      await db
+        .update(dailyTransactions)
+        .set({ 
+          verificationStatus: status,
+          verifiedBy: verifiedBy || null,
+          verificationNotes: verificationNotes || null,
+          verifiedAt: status === 'verified' ? new Date() : null
+        })
+        .where(eq(dailyTransactions.id, transactionId));
+    } catch (error) {
+      console.error('Error updating transaction verification status:', error);
+      throw new Error('Failed to update verification status');
+    }
   }
 }
 
