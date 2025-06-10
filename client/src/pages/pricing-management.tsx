@@ -103,12 +103,16 @@ export default function PricingManagement() {
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/tests");
       const data = await response.json();
-      // Map API response to frontend format
-      return data.map((service: any) => ({
-        ...service,
-        category: service.categoryId || 'Unknown',
-        status: service.isActive ? 'active' : 'inactive'
-      }));
+      // Map API response to frontend format with proper category names
+      return data.map((service: any) => {
+        const categoryName = serviceCategories.find(cat => cat.id === service.categoryId?.toString())?.name || 'Unknown';
+        return {
+          ...service,
+          category: categoryName,
+          categoryId: service.categoryId,
+          status: service.isActive ? 'active' : 'inactive'
+        };
+      });
     }
   });
 
@@ -219,7 +223,9 @@ export default function PricingManagement() {
       ...formData,
       price: parseFloat(formData.price),
       maxRebateAmount: formData.maxRebateAmount ? parseFloat(formData.maxRebateAmount) : 0,
-      duration: formData.duration ? parseInt(formData.duration) : null
+      duration: formData.duration ? parseInt(formData.duration) : null,
+      categoryId: formData.category,  // Map category to categoryId for backend
+      isActive: formData.status === 'active'  // Map status to isActive for backend
     };
 
     if (editingService) {
@@ -233,7 +239,7 @@ export default function PricingManagement() {
     setEditingService(service);
     setFormData({
       name: service.name,
-      category: service.category,
+      category: service.categoryId?.toString() || "1", // Use categoryId for form
       department: service.department,
       price: service.price.toString(),
       maxRebateAmount: service.maxRebateAmount?.toString() || "",
@@ -275,9 +281,9 @@ export default function PricingManagement() {
   const filteredServices = services?.filter((service: DiagnosticService) => {
     const matchesSearch = !searchTerm || 
                          service.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-                         service.category?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+                         String(service.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.department?.toLowerCase()?.includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || String(service.categoryId) === categoryFilter;
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
   }) || [];
