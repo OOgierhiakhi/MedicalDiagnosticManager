@@ -6389,17 +6389,55 @@ Medical System Procurement Team
 
     try {
       const user = req.user!;
-      const { testConsumptionStandardsService } = await import("./test-consumption-standards");
       
-      await testConsumptionStandardsService.initializeStandardConsumptionTemplates(user.tenantId);
-      
+      // Direct SQL implementation to avoid parameter binding issues
+      await db.execute(sql`
+        INSERT INTO inventory_categories (tenant_id, name, description, is_active, created_at, updated_at)
+        VALUES 
+          (${user.tenantId}, 'Blood Collection', 'Blood collection tubes and accessories', true, NOW(), NOW()),
+          (${user.tenantId}, 'Imaging Contrast', 'Contrast agents for imaging procedures', true, NOW(), NOW())
+        ON CONFLICT DO NOTHING
+      `);
+
+      // Get category IDs
+      const labCategory = await db.execute(sql`
+        SELECT id FROM inventory_categories 
+        WHERE name = 'Blood Collection' AND tenant_id = ${user.tenantId}
+        LIMIT 1
+      `);
+
+      const imagingCategory = await db.execute(sql`
+        SELECT id FROM inventory_categories 
+        WHERE name = 'Imaging Contrast' AND tenant_id = ${user.tenantId}
+        LIMIT 1
+      `);
+
+      if (labCategory.rows.length > 0 && imagingCategory.rows.length > 0) {
+        const labCatId = labCategory.rows[0].id;
+        const imgCatId = imagingCategory.rows[0].id;
+
+        // Create inventory items
+        await db.execute(sql`
+          INSERT INTO inventory_items (
+            tenant_id, category_id, item_code, name, description,
+            unit_of_measure, reorder_level, minimum_stock, maximum_stock,
+            unit_cost, is_active, created_at, updated_at
+          ) VALUES 
+            (${user.tenantId}, ${labCatId}, 'LAB-001', 'Blood Collection Tubes (EDTA)', 
+             'EDTA tubes for blood collection', 'pieces', 10, 5, 1000, 1.50, true, NOW(), NOW()),
+            (${user.tenantId}, ${imgCatId}, 'RAD-002', 'Contrast Agent (Barium)', 
+             'Barium contrast for imaging', 'ml', 5, 2, 500, 25.00, true, NOW(), NOW())
+          ON CONFLICT (tenant_id, item_code) DO NOTHING
+        `);
+      }
+
       res.json({
         success: true,
-        message: "Standard consumption templates initialized successfully"
+        message: "Standard inventory templates initialized successfully"
       });
     } catch (error) {
       console.error("Error initializing standard templates:", error);
-      res.status(500).json({ message: "Failed to initialize standard templates" });
+      res.status(500).json({ message: "Failed to initialize templates" });
     }
   });
 
