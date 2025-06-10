@@ -11,7 +11,8 @@ import {
   UserPlus,
   Shield,
   Eye,
-  EyeOff
+  EyeOff,
+  X
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ interface User {
   id: number;
   username: string;
   email: string;
-  role: string;
+  roles: string[];
   status: string;
   lastLogin: string;
   createdAt: string;
@@ -83,7 +84,7 @@ export default function UserManagement() {
     password: "",
     firstName: "",
     lastName: "",
-    role: "",
+    roles: [] as string[],
     department: ""
   });
 
@@ -114,7 +115,7 @@ export default function UserManagement() {
         password: "",
         firstName: "",
         lastName: "",
-        role: "",
+        roles: [],
         department: ""
       });
       toast({
@@ -330,21 +331,56 @@ export default function UserManagement() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select
-                      value={newUser.role}
-                      onValueChange={(value) => setNewUser({ ...newUser, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="staff">Staff</SelectItem>
-                        <SelectItem value="user">User</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Roles (Select Multiple)</Label>
+                    <div className="space-y-3">
+                      {/* Selected Roles Display */}
+                      {newUser.roles.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {newUser.roles.map((role) => (
+                            <Badge key={role} variant="secondary" className="flex items-center gap-1">
+                              {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              <X 
+                                className="w-3 h-3 cursor-pointer" 
+                                onClick={() => setNewUser({
+                                  ...newUser, 
+                                  roles: newUser.roles.filter(r => r !== role)
+                                })}
+                              />
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Role Selection */}
+                      <Select
+                        onValueChange={(value) => {
+                          if (!newUser.roles.includes(value)) {
+                            setNewUser({ ...newUser, roles: [...newUser.roles, value] });
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Add role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin - Full System Access</SelectItem>
+                          <SelectItem value="ceo">CEO - Executive Level</SelectItem>
+                          <SelectItem value="branch_manager">Branch Manager - Branch Oversight</SelectItem>
+                          <SelectItem value="doctor">Doctor - Medical Staff</SelectItem>
+                          <SelectItem value="nurse">Nurse - Clinical Staff</SelectItem>
+                          <SelectItem value="receptionist">Receptionist - Front Desk</SelectItem>
+                          <SelectItem value="cashier">Cashier - Billing & Payments</SelectItem>
+                          <SelectItem value="lab_technician">Lab Technician - Laboratory</SelectItem>
+                          <SelectItem value="radiologist">Radiologist - Imaging Services</SelectItem>
+                          <SelectItem value="pharmacist">Pharmacist - Pharmacy</SelectItem>
+                          <SelectItem value="accountant">Accountant - Financial Records</SelectItem>
+                          <SelectItem value="inventory_manager">Inventory Manager - Supply Chain</SelectItem>
+                          <SelectItem value="data_entry">Data Entry - Records Management</SelectItem>
+                          <SelectItem value="quality_assurance">Quality Assurance - QA/QC</SelectItem>
+                          <SelectItem value="consultant">Consultant - External Specialist</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
