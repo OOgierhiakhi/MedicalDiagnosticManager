@@ -532,7 +532,7 @@ export class TestConsumptionStandardsService {
                 tenant_id, name, description, is_active, created_at, updated_at
               ) VALUES (
                 ${tenantId}, ${consumption.category}, 
-                'Auto-created category for ${consumption.category}', 
+                ${`Auto-created category for ${consumption.category}`}, 
                 true, NOW(), NOW()
               ) RETURNING id
             `);
@@ -561,7 +561,7 @@ export class TestConsumptionStandardsService {
                 unit_cost, is_active, created_at, updated_at
               ) VALUES (
                 ${tenantId}, ${categoryId}, ${consumption.itemCode}, ${consumption.itemName},
-                'Standard medical laboratory consumable', ${consumption.unitOfMeasure},
+                ${'Standard medical laboratory consumable'}, ${consumption.unitOfMeasure},
                 10, 5, 1000, 1.00, true, NOW(), NOW()
               ) RETURNING id
             `);
