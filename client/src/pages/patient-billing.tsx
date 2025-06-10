@@ -211,13 +211,18 @@ export default function PatientBilling() {
   const { data: orgSettings } = useQuery({
     queryKey: ["/api/organization-settings", user?.tenantId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/organization-settings/${user?.tenantId}`, "GET");
+      if (!user?.tenantId) return null;
+      const response = await apiRequest("GET", `/api/organization-settings/${user.tenantId}`);
       return response.json();
-    }
+    },
+    enabled: !!user?.tenantId
   });
 
-  // Calculate totals with dynamic VAT
-  const subtotal = selectedServices.reduce((sum, service) => sum + service.total, 0);
+  // Calculate totals with dynamic VAT - ensure all values are numbers
+  const subtotal = selectedServices.reduce((sum, service) => {
+    const serviceTotal = typeof service.total === 'string' ? parseFloat(service.total) || 0 : service.total || 0;
+    return sum + serviceTotal;
+  }, 0);
   const vatRate = orgSettings?.vatEnabled ? parseFloat(orgSettings.vatRate || "0") / 100 : 0;
   const tax = subtotal * vatRate;
   const discount = 0; // Can be implemented later
@@ -606,8 +611,8 @@ export default function PatientBilling() {
               ) : (
                 /* Display editable services for new invoices */
                 <div className="space-y-4">
-                  {selectedServices.map((service) => (
-                    <div key={service.id} className="border rounded-lg p-3">
+                  {selectedServices.map((service, index) => (
+                    <div key={`service-${service.id}-${index}`} className="border rounded-lg p-3">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-medium">{service.name}</p>
@@ -642,7 +647,7 @@ export default function PatientBilling() {
                         <div>
                           <Label className="text-xs">Total (₦)</Label>
                           <Input
-                            value={service.total.toLocaleString()}
+                            value={(typeof service.total === 'string' ? parseFloat(service.total) || 0 : service.total || 0).toLocaleString()}
                             readOnly
                             className="bg-muted"
                           />
