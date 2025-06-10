@@ -1135,7 +1135,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { name, tenantId, requiresCommissionSetup } = req.body;
+      const { name, tenantId, requiresCommissionSetup, contactPerson, email, phone, address, commissionRate, status } = req.body;
       
       if (!name || !tenantId) {
         return res.status(400).json({ message: "Name and tenant ID are required" });
@@ -1144,12 +1144,53 @@ export function registerRoutes(app: Express): Server {
       const newProvider = await storage.createReferralProvider({
         name,
         tenantId,
-        requiresCommissionSetup: requiresCommissionSetup || true
+        contactPerson: contactPerson || null,
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        commissionRate: commissionRate || null,
+        status: status || 'active',
+        requiresCommissionSetup: requiresCommissionSetup || false
       });
 
       res.status(201).json(newProvider);
     } catch (error) {
       console.error("Error creating referral provider:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update referral provider
+  app.put("/api/referral-providers/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const providerId = parseInt(req.params.id);
+      if (isNaN(providerId)) {
+        return res.status(400).json({ message: "Invalid provider ID" });
+      }
+
+      const { name, contactPerson, email, phone, address, commissionRate, status } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+
+      const updatedProvider = await storage.updateReferralProvider(providerId, {
+        name,
+        contactPerson: contactPerson || null,
+        email: email || null,
+        phone: phone || null,
+        address: address || null,
+        commissionRate: commissionRate || null,
+        status: status || 'active'
+      });
+
+      res.json(updatedProvider);
+    } catch (error) {
+      console.error("Error updating referral provider:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
