@@ -102,7 +102,13 @@ export default function PricingManagement() {
     queryKey: ["/api/tests"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/tests");
-      return response.json();
+      const data = await response.json();
+      // Map API response to frontend format
+      return data.map((service: any) => ({
+        ...service,
+        category: service.categoryId || 'Unknown',
+        status: service.isActive ? 'active' : 'inactive'
+      }));
     }
   });
 
