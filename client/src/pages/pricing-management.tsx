@@ -284,7 +284,7 @@ export default function PricingManagement() {
                          service.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
                          String(service.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.department?.toLowerCase()?.includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || String(service.categoryId) === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
   }) || [];
@@ -414,7 +414,7 @@ export default function PricingManagement() {
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {serviceCategories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -545,7 +545,7 @@ export default function PricingManagement() {
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {serviceCategories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
