@@ -41,6 +41,14 @@ interface ReferralProvider {
   totalReferrals?: number;
   lastActivity?: string;
   createdAt: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  bankCode?: string;
+  sortCode?: string;
+  routingNumber?: string;
+  iban?: string;
+  swiftCode?: string;
 }
 
 export default function ReferralManagement() {
@@ -60,7 +68,15 @@ export default function ReferralManagement() {
     phone: "",
     address: "",
     commissionRate: "",
-    status: "active"
+    status: "active",
+    bankName: "",
+    accountNumber: "",
+    accountName: "",
+    bankCode: "",
+    sortCode: "",
+    routingNumber: "",
+    iban: "",
+    swiftCode: ""
   });
 
   // Fetch referral providers
