@@ -761,21 +761,24 @@ export function registerRoutes(app: Express): Server {
 
       // Handle specific patient test requests for billing
       if (patientId && status) {
+        console.log('Fetching patient tests for billing:', { patientId, status, userBranchId, tenantId: req.user?.tenantId });
+        
         const patientTestsWithDetails = await db
           .select({
             id: patientTests.id,
             patientId: patientTests.patientId,
             testId: patientTests.testId,
-            testName: testCategories.name,
-            price: testCategories.price,
-            category: testCategories.category,
+            testName: tests.name,
+            price: tests.price,
+            category: testCategories.name,
             status: patientTests.status,
             scheduledAt: patientTests.scheduledAt,
             branchId: patientTests.branchId,
             tenantId: patientTests.tenantId
           })
           .from(patientTests)
-          .leftJoin(testCategories, eq(patientTests.testId, testCategories.id))
+          .leftJoin(tests, eq(patientTests.testId, tests.id))
+          .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
           .where(
             and(
               eq(patientTests.patientId, parseInt(patientId as string)),
@@ -786,6 +789,7 @@ export function registerRoutes(app: Express): Server {
           )
           .orderBy(desc(patientTests.scheduledAt));
 
+        console.log('Found patient tests:', patientTestsWithDetails);
         return res.json(patientTestsWithDetails);
       }
       
