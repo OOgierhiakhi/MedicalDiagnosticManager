@@ -10588,7 +10588,7 @@ Medical System Procurement Team
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { username, email, password, firstName, lastName, role, department } = req.body;
+      const { username, email, password, firstName, lastName, roles, department } = req.body;
       
       // Hash password in production - for now using plain text for development
       const newUser = await storage.createUser({
@@ -10597,7 +10597,7 @@ Medical System Procurement Team
         password, // In production, hash this
         firstName,
         lastName,
-        role,
+        roles: roles || [],
         department,
         tenantId: req.user?.tenantId || 1,
         branchId: req.user?.branchId || 1,
@@ -10608,6 +10608,38 @@ Medical System Procurement Team
     } catch (error: any) {
       console.error("Error creating user:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get available roles for user management
+  app.get("/api/roles", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const roles = [
+        { id: "admin", name: "Admin", description: "Full system access" },
+        { id: "ceo", name: "CEO", description: "Executive level access" },
+        { id: "branch_manager", name: "Branch Manager", description: "Branch oversight" },
+        { id: "doctor", name: "Doctor", description: "Medical staff" },
+        { id: "nurse", name: "Nurse", description: "Clinical staff" },
+        { id: "receptionist", name: "Receptionist", description: "Front desk operations" },
+        { id: "cashier", name: "Cashier", description: "Billing and payments" },
+        { id: "lab_technician", name: "Lab Technician", description: "Laboratory operations" },
+        { id: "radiologist", name: "Radiologist", description: "Imaging services" },
+        { id: "pharmacist", name: "Pharmacist", description: "Pharmacy operations" },
+        { id: "accountant", name: "Accountant", description: "Financial records" },
+        { id: "inventory_manager", name: "Inventory Manager", description: "Supply chain management" },
+        { id: "data_entry", name: "Data Entry", description: "Records management" },
+        { id: "quality_assurance", name: "Quality Assurance", description: "QA/QC processes" },
+        { id: "consultant", name: "Consultant", description: "External specialist" }
+      ];
+
+      res.json(roles);
+    } catch (error: any) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ error: "Authentication system error" });
     }
   });
 

@@ -212,10 +212,28 @@ export default function UserManagement() {
     switch (role.toLowerCase()) {
       case 'admin':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'manager':
+      case 'ceo':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      case 'branch_manager':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'staff':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      case 'doctor':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
+      case 'nurse':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300';
+      case 'lab_technician':
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300';
+      case 'pharmacist':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300';
+      case 'cashier':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      case 'receptionist':
+        return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300';
+      case 'radiologist':
+        return 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-300';
+      case 'accountant':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      case 'inventory_manager':
+        return 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
     }
@@ -496,9 +514,19 @@ export default function UserManagement() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getRoleColor(user.role)}>
-                            {user.role}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {user.roles && user.roles.length > 0 ? (
+                              user.roles.map((role) => (
+                                <Badge key={role} className={getRoleColor(role)}>
+                                  {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-800">
+                                No roles assigned
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600 dark:text-gray-400">
@@ -613,24 +641,60 @@ export default function UserManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="editRole">Role</Label>
-                <Select
-                  value={selectedUser.role}
-                  onValueChange={(value) => setSelectedUser({ 
-                    ...selectedUser, 
-                    role: value 
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="user">User</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Roles (Select Multiple)</Label>
+                <div className="space-y-3">
+                  {/* Selected Roles Display */}
+                  {selectedUser.roles && selectedUser.roles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedUser.roles.map((role) => (
+                        <Badge key={role} variant="secondary" className="flex items-center gap-1">
+                          {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          <X 
+                            className="w-3 h-3 cursor-pointer" 
+                            onClick={() => setSelectedUser({
+                              ...selectedUser, 
+                              roles: selectedUser.roles.filter(r => r !== role)
+                            })}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Role Selection */}
+                  <Select
+                    onValueChange={(value) => {
+                      const currentRoles = selectedUser.roles || [];
+                      if (!currentRoles.includes(value)) {
+                        setSelectedUser({ 
+                          ...selectedUser, 
+                          roles: [...currentRoles, value] 
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Add role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin - Full System Access</SelectItem>
+                      <SelectItem value="ceo">CEO - Executive Level</SelectItem>
+                      <SelectItem value="branch_manager">Branch Manager - Branch Oversight</SelectItem>
+                      <SelectItem value="doctor">Doctor - Medical Staff</SelectItem>
+                      <SelectItem value="nurse">Nurse - Clinical Staff</SelectItem>
+                      <SelectItem value="receptionist">Receptionist - Front Desk</SelectItem>
+                      <SelectItem value="cashier">Cashier - Billing & Payments</SelectItem>
+                      <SelectItem value="lab_technician">Lab Technician - Laboratory</SelectItem>
+                      <SelectItem value="radiologist">Radiologist - Imaging Services</SelectItem>
+                      <SelectItem value="pharmacist">Pharmacist - Pharmacy</SelectItem>
+                      <SelectItem value="accountant">Accountant - Financial Records</SelectItem>
+                      <SelectItem value="inventory_manager">Inventory Manager - Supply Chain</SelectItem>
+                      <SelectItem value="data_entry">Data Entry - Records Management</SelectItem>
+                      <SelectItem value="quality_assurance">Quality Assurance - QA/QC</SelectItem>
+                      <SelectItem value="consultant">Consultant - External Specialist</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editDepartment">Department</Label>
