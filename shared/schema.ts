@@ -84,6 +84,17 @@ export const referralProviders = pgTable("referral_providers", {
   commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default("0.00"), // Percentage
   maxRebateLimit: decimal("max_rebate_limit", { precision: 10, scale: 2 }).default("0.00"), // Per test limit
   requiresCommissionSetup: boolean("requires_commission_setup").notNull().default(false), // Flag for managers
+  
+  // Banking details for payment processing
+  bankName: text("bank_name"),
+  accountNumber: text("account_number"),
+  accountName: text("account_name"),
+  bankCode: text("bank_code"),
+  sortCode: text("sort_code"),
+  routingNumber: text("routing_number"),
+  iban: text("iban"),
+  swiftCode: text("swift_code"),
+  
   tenantId: integer("tenant_id").notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),

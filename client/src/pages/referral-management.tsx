@@ -466,6 +466,74 @@ export default function ReferralManagement() {
               </div>
             </div>
 
+            {/* Banking Details Section */}
+            <div className="border-t pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Banking Details for Payments</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="bankName">Bank Name</Label>
+                  <Input
+                    id="bankName"
+                    value={formData.bankName || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                    placeholder="e.g., First Bank of Nigeria"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="accountName">Account Name</Label>
+                  <Input
+                    id="accountName"
+                    value={formData.accountName || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, accountName: e.target.value }))}
+                    placeholder="Account holder name"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="accountNumber">Account Number</Label>
+                  <Input
+                    id="accountNumber"
+                    value={formData.accountNumber || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, accountNumber: e.target.value }))}
+                    placeholder="1234567890"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="bankCode">Bank Code</Label>
+                  <Input
+                    id="bankCode"
+                    value={formData.bankCode || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bankCode: e.target.value }))}
+                    placeholder="e.g., 011"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="sortCode">Sort Code</Label>
+                  <Input
+                    id="sortCode"
+                    value={formData.sortCode || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sortCode: e.target.value }))}
+                    placeholder="e.g., 12-34-56"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="swiftCode">SWIFT Code</Label>
+                  <Input
+                    id="swiftCode"
+                    value={formData.swiftCode || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, swiftCode: e.target.value }))}
+                    placeholder="e.g., FIRSTNGL"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
               <Button 
                 type="button" 
