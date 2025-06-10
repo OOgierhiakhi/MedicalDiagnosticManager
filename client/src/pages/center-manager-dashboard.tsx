@@ -221,7 +221,7 @@ export default function CenterManagerDashboard() {
       title: "Inventory Management",
       description: "Monitor stock levels and approve requisitions",
       icon: Package,
-      href: "/inventory-dashboard",
+      href: "/inventory-management",
       category: 'operational',
       priority: 'high',
       allowedRoles: ['admin', 'center_manager', 'branch_manager'],
