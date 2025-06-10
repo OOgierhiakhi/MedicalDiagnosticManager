@@ -280,8 +280,9 @@ export default function PricingManagement() {
                          String(service.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.department?.toLowerCase()?.includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
+    const matchesDepartment = departmentFilter === "all" || service.department === departmentFilter;
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesDepartment && matchesStatus;
   }) || [];
 
   const getStatusColor = (status: string) => {
