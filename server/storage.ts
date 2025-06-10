@@ -671,11 +671,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTests(tenantId: number): Promise<Test[]> {
-    return await db
-      .select()
+    const result = await db
+      .select({
+        id: tests.id,
+        name: tests.name,
+        code: tests.code,
+        categoryId: tests.categoryId,
+        category: testCategories.name,
+        department: tests.department,
+        price: tests.price,
+        maxRebateAmount: tests.maxRebateAmount,
+        description: tests.description,
+        duration: tests.duration,
+        preparationRequired: tests.preparationRequired,
+        fastingRequired: tests.fastingRequired,
+        isActive: tests.isActive,
+        tenantId: tests.tenantId,
+        createdAt: tests.createdAt,
+        updatedAt: tests.updatedAt
+      })
       .from(tests)
+      .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
       .where(eq(tests.tenantId, tenantId))
-      .orderBy(tests.name);
+      .orderBy(testCategories.name, tests.name);
+    
+    return result as Test[];
   }
 
   async getTest(id: number): Promise<Test | undefined> {

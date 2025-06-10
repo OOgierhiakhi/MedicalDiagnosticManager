@@ -1790,6 +1790,62 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update individual test
+  app.put("/api/tests/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const testId = parseInt(req.params.id);
+      const tenantId = req.user.tenantId;
+      const { 
+        name, 
+        categoryId, 
+        department, 
+        price, 
+        maxRebateAmount, 
+        description, 
+        duration, 
+        preparationRequired, 
+        fastingRequired, 
+        isActive 
+      } = req.body;
+
+      if (isNaN(testId)) {
+        return res.status(400).json({ message: "Invalid test ID" });
+      }
+
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (categoryId !== undefined) updateData.categoryId = parseInt(categoryId);
+      if (department !== undefined) updateData.department = department;
+      if (price !== undefined) updateData.price = parseFloat(price);
+      if (maxRebateAmount !== undefined) updateData.maxRebateAmount = parseFloat(maxRebateAmount);
+      if (description !== undefined) updateData.description = description;
+      if (duration !== undefined) updateData.duration = duration ? parseInt(duration) : null;
+      if (preparationRequired !== undefined) updateData.preparationRequired = preparationRequired;
+      if (fastingRequired !== undefined) updateData.fastingRequired = fastingRequired;
+      if (isActive !== undefined) updateData.isActive = isActive;
+      updateData.updatedAt = new Date();
+
+      const result = await db
+        .update(tests)
+        .set(updateData)
+        .where(and(eq(tests.id, testId), eq(tests.tenantId, tenantId)))
+        .returning();
+
+      if (result.length === 0) {
+        return res.status(404).json({ message: "Test not found" });
+      }
+
+      res.json({ message: "Test updated successfully", test: result[0] });
+    } catch (error) {
+      console.error("Error updating test:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Bulk update test prices
   app.put("/api/tests/bulk-update", async (req, res) => {
     try {

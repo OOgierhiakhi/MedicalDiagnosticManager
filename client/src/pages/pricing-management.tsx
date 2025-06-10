@@ -100,6 +100,7 @@ export default function PricingManagement() {
   // Fetch diagnostic services
   const { data: services, isLoading } = useQuery({
     queryKey: ["/api/tests"],
+    enabled: serviceCategories.length > 0, // Wait for categories to load first
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/tests");
       const data = await response.json();
