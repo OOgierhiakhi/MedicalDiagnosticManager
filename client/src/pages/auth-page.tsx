@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Stethoscope, Shield, Database, Users } from "lucide-react";
+import { Loader2, Stethoscope, Shield, Database, Users, RefreshCw } from "lucide-react";
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
@@ -22,6 +22,36 @@ export default function AuthPage() {
     role: "staff"
   });
 
+  // Math captcha state
+  const [mathCaptcha, setMathCaptcha] = useState({ num1: 0, num2: 0, answer: 0 });
+  const [userAnswer, setUserAnswer] = useState("");
+  const [isCaptchaValid, setIsCaptchaValid] = useState(false);
+
+  // Generate random math problem
+  const generateMathProblem = () => {
+    const num1 = Math.floor(Math.random() * 20) + 1;
+    const num2 = Math.floor(Math.random() * 20) + 1;
+    const answer = num1 + num2;
+    setMathCaptcha({ num1, num2, answer });
+    setUserAnswer("");
+    setIsCaptchaValid(false);
+  };
+
+  // Initialize captcha on component mount
+  useEffect(() => {
+    generateMathProblem();
+  }, []);
+
+  // Check captcha answer
+  useEffect(() => {
+    const userAnswerNum = parseInt(userAnswer);
+    if (!isNaN(userAnswerNum) && userAnswerNum === mathCaptcha.answer) {
+      setIsCaptchaValid(true);
+    } else {
+      setIsCaptchaValid(false);
+    }
+  }, [userAnswer, mathCaptcha.answer]);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
@@ -35,6 +65,9 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isCaptchaValid) {
+      return;
+    }
     loginMutation.mutate(loginForm);
   };
 
@@ -96,10 +129,50 @@ export default function AuthPage() {
                         disabled={loginMutation.isPending}
                       />
                     </div>
+
+                    {/* Math Captcha */}
+                    <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="flex items-center space-x-2 text-2xl font-mono bg-white px-4 py-2 rounded border border-gray-300">
+                          <span className="font-bold">{mathCaptcha.num1}</span>
+                          <span>+</span>
+                          <span className="font-bold">{mathCaptcha.num2}</span>
+                          <span>=</span>
+                          <span className="text-gray-400">?</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={generateMathProblem}
+                          className="p-2"
+                          title="Refresh captcha"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="captcha-answer">Write your answer</Label>
+                        <Input
+                          id="captcha-answer"
+                          type="number"
+                          value={userAnswer}
+                          onChange={(e) => setUserAnswer(e.target.value)}
+                          placeholder="Enter the sum"
+                          className={`text-center ${isCaptchaValid ? 'border-green-500 bg-green-50' : ''}`}
+                          required
+                        />
+                      </div>
+                    </div>
+
                     <Button
                       type="submit"
-                      className="w-full bg-medical-blue hover:bg-blue-700"
-                      disabled={loginMutation.isPending}
+                      className={`w-full transition-all duration-300 ${
+                        isCaptchaValid 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      disabled={loginMutation.isPending || !isCaptchaValid}
                     >
                       {loginMutation.isPending ? (
                         <>
