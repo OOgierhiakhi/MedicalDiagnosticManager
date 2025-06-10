@@ -361,7 +361,7 @@ export default function DailyTransactionViewer() {
                             transaction.paymentMethod === 'cash' ? 'default' :
                             transaction.paymentMethod === 'pos' ? 'secondary' : 'outline'
                           }>
-                            {transaction.paymentMethod.toUpperCase()}
+                            {transaction.paymentMethod?.toUpperCase() || 'N/A'}
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(transaction.transactionTime).toLocaleTimeString()}</TableCell>

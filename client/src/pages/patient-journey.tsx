@@ -310,11 +310,11 @@ export default function PatientJourneyVisualization() {
                         </div>
                         <div className="flex gap-2">
                           <Badge className={getStatusColor(journey.status)}>
-                            {journey.status.replace('_', ' ').toUpperCase()}
+                            {journey.status?.replace('_', ' ')?.toUpperCase() || 'UNKNOWN'}
                           </Badge>
                           {journey.priority !== 'normal' && (
                             <Badge className={getPriorityColor(journey.priority)}>
-                              {journey.priority.toUpperCase()}
+                              {journey.priority?.toUpperCase() || 'NORMAL'}
                             </Badge>
                           )}
                         </div>
@@ -403,7 +403,7 @@ export default function PatientJourneyVisualization() {
                                     <p><span className="font-medium">Current Step:</span> {selectedJourney.currentStep}</p>
                                     <p><span className="font-medium">Status:</span> 
                                       <Badge className={`ml-2 ${getStatusColor(selectedJourney.status)}`}>
-                                        {selectedJourney.status.replace('_', ' ').toUpperCase()}
+                                        {selectedJourney.status?.replace('_', ' ')?.toUpperCase() || 'UNKNOWN'}
                                       </Badge>
                                     </p>
                                   </div>
@@ -483,7 +483,7 @@ export default function PatientJourneyVisualization() {
               <Card key={status}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">
-                    {status.replace('_', ' ').toUpperCase()}
+                    {status?.replace('_', ' ')?.toUpperCase() || 'UNKNOWN'}
                     <Badge variant="secondary" className="ml-2">
                       {filteredJourneys.filter((j: PatientJourney) => j.status === status).length}
                     </Badge>
@@ -501,7 +501,7 @@ export default function PatientJourneyVisualization() {
                         </p>
                         {journey.priority !== 'normal' && (
                           <Badge className={`${getPriorityColor(journey.priority)} text-xs mt-1`}>
-                            {journey.priority.toUpperCase()}
+                            {journey.priority?.toUpperCase() || 'NORMAL'}
                           </Badge>
                         )}
                       </div>
