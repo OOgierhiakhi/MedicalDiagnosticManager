@@ -83,7 +83,7 @@ export default function ReferralManagement() {
   const { data: providers, isLoading } = useQuery({
     queryKey: ["/api/referral-providers", user?.tenantId],
     queryFn: async () => {
-      const response = await apiRequest(`/api/referral-providers/${user?.tenantId}`, "GET");
+      const response = await apiRequest("GET", `/api/referral-providers/${user?.tenantId}`);
       return response.json();
     }
   });
@@ -91,7 +91,7 @@ export default function ReferralManagement() {
   // Create provider mutation
   const createProviderMutation = useMutation({
     mutationFn: async (providerData: any) => {
-      const response = await apiRequest("/api/referral-providers", "POST", {
+      const response = await apiRequest("POST", "/api/referral-providers", {
         ...providerData,
         tenantId: user?.tenantId,
         requiresCommissionSetup: false

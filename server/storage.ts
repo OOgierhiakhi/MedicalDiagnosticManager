@@ -672,30 +672,23 @@ export class DatabaseStorage implements IStorage {
 
   async getTests(tenantId: number): Promise<Test[]> {
     const result = await db
-      .select({
-        id: tests.id,
-        name: tests.name,
-        code: tests.code,
-        categoryId: tests.categoryId,
-        category: testCategories.name,
-        department: tests.department,
-        price: tests.price,
-        maxRebateAmount: tests.maxRebateAmount,
-        description: tests.description,
-        duration: tests.duration,
-        preparationRequired: tests.preparationRequired,
-        fastingRequired: tests.fastingRequired,
-        isActive: tests.isActive,
-        tenantId: tests.tenantId,
-        createdAt: tests.createdAt,
-        updatedAt: tests.updatedAt
-      })
+      .select()
       .from(tests)
-      .leftJoin(testCategories, eq(tests.categoryId, testCategories.id))
       .where(eq(tests.tenantId, tenantId))
-      .orderBy(testCategories.name, tests.name);
+      .orderBy(tests.name);
     
-    return result as Test[];
+    // Add category names in a separate step to avoid Drizzle issues
+    const categories = await db
+      .select()
+      .from(testCategories)
+      .where(eq(testCategories.tenantId, tenantId));
+    
+    const categoryMap = new Map(categories.map(cat => [cat.id, cat.name]));
+    
+    return result.map(test => ({
+      ...test,
+      category: categoryMap.get(test.categoryId) || 'Unknown'
+    })) as Test[];
   }
 
   async getTest(id: number): Promise<Test | undefined> {
