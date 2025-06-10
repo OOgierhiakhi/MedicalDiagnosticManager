@@ -84,6 +84,8 @@ import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import MessagesDashboard from "@/pages/messages-dashboard";
 import BillingDashboard from "@/pages/billing-dashboard";
 import UserManagement from "@/pages/user-management";
+import ReferralManagement from "@/pages/referral-management";
+import PricingManagement from "@/pages/pricing-management";
 
 function Router() {
   return (
@@ -163,6 +165,8 @@ function Router() {
       <ProtectedRoute path="/messages-dashboard" component={MessagesDashboard} />
       <ProtectedRoute path="/billing-dashboard" component={BillingDashboard} />
       <ProtectedRoute path="/user-management" component={UserManagement} />
+      <ProtectedRoute path="/referral-management" component={ReferralManagement} />
+      <ProtectedRoute path="/pricing-management" component={PricingManagement} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
