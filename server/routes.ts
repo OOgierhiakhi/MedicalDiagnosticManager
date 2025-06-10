@@ -1790,6 +1790,55 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Bulk update test prices
+  app.put("/api/tests/bulk-update", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { category, priceChangePercent } = req.body;
+      const tenantId = req.user.tenantId;
+
+      if (!priceChangePercent || isNaN(parseFloat(priceChangePercent))) {
+        return res.status(400).json({ message: "Valid price change percentage is required" });
+      }
+
+      const multiplier = 1 + (parseFloat(priceChangePercent) / 100);
+
+      let updateQuery;
+      let params: any[] = [multiplier, tenantId];
+
+      if (category === "all") {
+        updateQuery = sql`
+          UPDATE tests 
+          SET price = ROUND(price * ${multiplier}, 2),
+              updated_at = NOW()
+          WHERE tenant_id = ${tenantId}
+        `;
+      } else {
+        updateQuery = sql`
+          UPDATE tests 
+          SET price = ROUND(price * ${multiplier}, 2),
+              updated_at = NOW()
+          WHERE tenant_id = ${tenantId} AND category = ${category}
+        `;
+        params.push(category);
+      }
+
+      const result = await db.execute(updateQuery);
+      
+      res.json({ 
+        message: "Prices updated successfully",
+        updatedCount: result.rowCount || 0,
+        priceChangePercent
+      });
+    } catch (error) {
+      console.error("Error updating test prices:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Laboratory workflow metrics
   app.get("/api/laboratory/metrics", async (req, res) => {
     // Disable caching to ensure date filtering works

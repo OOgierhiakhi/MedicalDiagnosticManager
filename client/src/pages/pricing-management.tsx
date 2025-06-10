@@ -240,9 +240,37 @@ export default function PricingManagement() {
     setShowEditDialog(true);
   };
 
+  const handleBulkUpdate = () => {
+    if (!priceChangePercent.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a price change percentage",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const percent = parseFloat(priceChangePercent);
+    if (isNaN(percent) || percent === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid price change percentage",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    bulkUpdateMutation.mutate({
+      category: bulkCategory,
+      priceChangePercent: percent
+    });
+  };
+
   const filteredServices = services?.filter((service: DiagnosticService) => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.category?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm || 
+                         service.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+                         service.category?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+                         service.department?.toLowerCase()?.includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || service.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
@@ -497,7 +525,7 @@ export default function PricingManagement() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label>Category</Label>
-                  <Select>
+                  <Select value={bulkCategory} onValueChange={setBulkCategory}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -511,10 +539,20 @@ export default function PricingManagement() {
                 </div>
                 <div>
                   <Label>Price Change (%)</Label>
-                  <Input placeholder="e.g., 10 for 10% increase, -5 for 5% decrease" />
+                  <Input 
+                    placeholder="e.g., 10 for 10% increase, -5 for 5% decrease" 
+                    value={priceChangePercent}
+                    onChange={(e) => setPriceChangePercent(e.target.value)}
+                  />
                 </div>
                 <div className="flex items-end">
-                  <Button className="w-full">Apply Changes</Button>
+                  <Button 
+                    className="w-full" 
+                    onClick={handleBulkUpdate}
+                    disabled={bulkUpdateMutation.isPending}
+                  >
+                    {bulkUpdateMutation.isPending ? "Applying..." : "Apply Changes"}
+                  </Button>
                 </div>
               </div>
             </CardContent>
