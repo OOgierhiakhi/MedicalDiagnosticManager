@@ -1072,15 +1072,21 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Generate thermal receipt (text format for POS printers)
+  // Generate thermal receipt (text format for POS printers) - MUST come before general receipt route
   app.get("/api/invoices/:id/thermal-receipt", async (req, res) => {
+    console.log("=== THERMAL RECEIPT ROUTE HIT ===");
+    console.log("Request params:", req.params);
+    console.log("Request query:", req.query);
+    console.log("User authenticated:", req.isAuthenticated());
+    
     try {
       if (!req.isAuthenticated()) {
+        console.log("Authentication failed");
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const invoiceId = parseInt(req.params.id);
-      const paperSize = req.query.paperSize as string || '58mm'; // Default to 58mm
+      const paperSize = req.query.paperSize as string || '58mm';
       
       console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}, user: ${req.user?.username}`);
       
