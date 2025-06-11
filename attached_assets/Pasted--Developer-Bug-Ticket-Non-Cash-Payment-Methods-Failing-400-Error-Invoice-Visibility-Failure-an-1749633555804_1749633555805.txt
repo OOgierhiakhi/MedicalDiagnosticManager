@@ -1,0 +1,87 @@
+**Developer Bug Ticket: Non-Cash Payment Methods Failing (400 Error), Invoice Visibility Failure, and Missing Receipt Printing**
+
+**Ticket ID:** ERP-BILLING-20250611-001
+**Date:** 11th June 2025
+**Module:** Payment Processing, Invoice Management, Receipt Generation
+**Environment:** Replit ERP - Production/Test Instance
+**Reported By:** Dr. Ogierhiakhi Omokaro
+
+---
+
+### **Summary:**
+
+Multiple critical billing system errors have been observed:
+
+#### 1. Non-Cash Payment Methods Failing:
+
+Non-cash payment methods (Card and Bank Transfer) are currently failing with the error:
+
+> 400: {"error":"Invalid payment method"}
+
+#### 2. Invoices Not Displayed or Recognized:
+
+* Successfully created invoices are not showing up in the dashboard or invoice management tab.
+* After generating an invoice and processing payment, returning to the same patient shows the services as pending again — as though no invoice exists.
+* The system does not recognize that billing was completed and allows duplicate or redundant invoice creation.
+
+#### 3. No Option to Print Receipt After Payment:
+
+* After successful invoice creation and payment, the system shows a "Payment Processed" notification (e.g., Receipt #RCP-2025-1787), but there is no option to preview or print the receipt.
+* Users need a way to reprint or download receipts for patients immediately after payment.
+
+---
+
+### **Steps to Reproduce:**
+
+1. Create an invoice for a patient (e.g., Richard Guobadia or Test Patient).
+2. Complete payment and observe success message (e.g., "Receipt generated").
+3. Return to the patient billing tab — system still allows re-billing same services.
+4. Go to Billing Dashboard → Invoice Management → No invoices found.
+5. Attempt card or transfer payment → error 400: Invalid payment method.
+6. No visible button or link appears to print the receipt after successful payment.
+
+---
+
+### **Impact:**
+
+* Duplicate service billing and payment processing risk
+* Loss of invoice visibility on billing dashboard
+* Financial records do not reflect true outstanding or collected amounts
+* No proof of payment available for patients or audit trail
+
+---
+
+### **Action Required:**
+
+* [ ] Fix the 400 error for non-cash payments
+* [ ] Investigate and fix invoice invisibility issue on dashboard and invoice management
+* [ ] Prevent re-selection of already billed services unless manually reset
+* [ ] Add a receipt preview/download button immediately after payment success toast
+* [ ] Link generated receipt ID to a printable component (PDF or web page)
+* [ ] Ensure receipts can also be reprinted from the invoice or transaction history page
+
+---
+
+### **Regression Testing Checklist (Post Fix):**
+
+* [ ] Card and Bank Transfer payments processed successfully
+* [ ] All invoices appear in Invoice Management tab and dashboard counts
+* [ ] Previously billed services do not reappear as new or unbilled
+* [ ] Collected Today and Outstanding Amount totals reflect real-time data
+* [ ] Duplicate invoice creation blocked unless manually triggered
+* [ ] Payment receipts and logs remain intact and accurate
+* [ ] Print/Download option available immediately after payment
+
+---
+
+### **Post-Resolution Deliverables:**
+
+* [ ] Summary of root cause
+* [ ] Code diff or commit reference
+* [ ] Confirmation of no impact on other billing modules
+* [ ] Suggest automated test or invoice audit logic to prevent recurrence
+
+---
+
+**Priority:** Critical
+**Status:** OPEN

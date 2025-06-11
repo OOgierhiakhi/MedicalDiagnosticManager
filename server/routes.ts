@@ -759,22 +759,18 @@ export function registerRoutes(app: Express): Server {
 
           // If requesting scheduled tests for billing, filter out already-billed tests
           if (status === 'scheduled') {
-            // Get all paid invoices for this patient to check which tests were already billed
-            const paidInvoices = await db
+            // Get all invoices (both paid and unpaid) for this patient to check which tests were already billed
+            const allInvoices = await db
               .select({
-                tests: invoices.tests
+                tests: invoices.tests,
+                paymentStatus: invoices.paymentStatus
               })
               .from(invoices)
-              .where(
-                and(
-                  eq(invoices.patientId, parseInt(patientId as string)),
-                  eq(invoices.paymentStatus, 'paid')
-                )
-              );
+              .where(eq(invoices.patientId, parseInt(patientId as string)));
 
-            // Extract test IDs from paid invoices
+            // Extract test IDs from all invoices (paid and unpaid)
             const billedTestIds = new Set();
-            paidInvoices.forEach(invoice => {
+            allInvoices.forEach(invoice => {
               if (invoice.tests && Array.isArray(invoice.tests)) {
                 invoice.tests.forEach((test: any) => {
                   if (test.testId) {
@@ -791,6 +787,7 @@ export function registerRoutes(app: Express): Server {
 
             console.log('Found patient tests (filtered):', unbilledTests);
             console.log('Billed test IDs to exclude:', Array.from(billedTestIds));
+            console.log('Total invoices found:', allInvoices.length);
             return res.json(unbilledTests);
           }
 

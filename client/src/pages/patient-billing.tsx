@@ -48,6 +48,9 @@ export default function PatientBilling() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [showServiceSelection, setShowServiceSelection] = useState(false);
+  const [lastReceiptNumber, setLastReceiptNumber] = useState<string>("");
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
 
   // Service master list with different pricing tiers
   const serviceMasterList = [
@@ -245,10 +248,33 @@ export default function PatientBilling() {
       return response.json();
     },
     onSuccess: (data) => {
+      // Store receipt data for printing
+      setLastReceiptNumber(data.receiptNumber);
+      setReceiptData({
+        receiptNumber: data.receiptNumber,
+        patient: selectedPatient,
+        services: selectedServices,
+        subtotal,
+        tax,
+        totalAmount,
+        paymentMethod,
+        timestamp: new Date().toISOString()
+      });
+
       toast({
         title: "Payment Processed",
         description: `Receipt #${data.receiptNumber} generated successfully`,
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowReceiptDialog(true)}
+          >
+            Print Receipt
+          </Button>
+        ),
       });
+      
       // Reset form
       setSelectedServices([]);
       setSelectedPatient(null);
@@ -798,6 +824,100 @@ export default function PatientBilling() {
           </Button>
         </div>
       </div>
+
+      {/* Receipt Printing Dialog */}
+      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Receipt Preview</DialogTitle>
+          </DialogHeader>
+          {receiptData && (
+            <div className="space-y-6 p-6 bg-white">
+              {/* Receipt Header */}
+              <div className="text-center border-b pb-4">
+                <h2 className="text-xl font-bold">Orient Medical Diagnostic Centre</h2>
+                <p className="text-sm text-gray-600">Payment Receipt</p>
+                <p className="text-lg font-mono">{receiptData.receiptNumber}</p>
+              </div>
+
+              {/* Patient Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold">Patient Details:</p>
+                  <p>{receiptData.patient?.firstName} {receiptData.patient?.lastName}</p>
+                  <p>ID: {receiptData.patient?.patientId}</p>
+                  <p>Phone: {receiptData.patient?.phoneNumber}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Payment Details:</p>
+                  <p>Date: {new Date(receiptData.timestamp).toLocaleDateString()}</p>
+                  <p>Method: {receiptData.paymentMethod?.toUpperCase()}</p>
+                  <p>Staff: {user?.username}</p>
+                </div>
+              </div>
+
+              {/* Services */}
+              <div>
+                <p className="font-semibold mb-2">Services:</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Service</TableHead>
+                      <TableHead>Qty</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {receiptData.services?.map((service: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{service.name}</TableCell>
+                        <TableCell>{service.quantity}</TableCell>
+                        <TableCell>₦{service.unitPrice?.toLocaleString()}</TableCell>
+                        <TableCell>₦{service.total?.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t pt-4">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>₦{receiptData.subtotal?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax:</span>
+                  <span>₦{receiptData.tax?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <span>Total Paid:</span>
+                  <span>₦{receiptData.totalAmount?.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Print Actions */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button 
+                  onClick={() => window.print()} 
+                  className="flex-1"
+                >
+                  <Receipt className="w-4 h-4 mr-2" />
+                  Print Receipt
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowReceiptDialog(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
