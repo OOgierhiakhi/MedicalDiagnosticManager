@@ -268,7 +268,11 @@ export default function PatientBilling() {
       return response.json();
     },
     onSuccess: (data) => {
-      setCurrentInvoice(data);
+      console.log("Create Invoice Response:", data);
+      // Extract the actual invoice object from the response
+      const invoiceData = data.invoice || data;
+      console.log("Invoice Data Extracted:", invoiceData);
+      setCurrentInvoice(invoiceData);
       setWorkflowStep("payment");
       toast({
         title: "Invoice Created",
@@ -432,7 +436,11 @@ export default function PatientBilling() {
   const handlePayCurrentInvoice = async () => {
     const invoiceToUse = currentInvoice || selectedInvoice;
     
-    if (!invoiceToUse) {
+    console.log("Payment Debug - Current Invoice:", currentInvoice);
+    console.log("Payment Debug - Selected Invoice:", selectedInvoice);
+    console.log("Payment Debug - Invoice to Use:", invoiceToUse);
+    
+    if (!invoiceToUse || !invoiceToUse.id) {
       toast({
         title: "No Invoice Selected",
         description: "Please select an invoice to pay.",
@@ -451,9 +459,10 @@ export default function PatientBilling() {
       return;
     }
 
+    console.log("Payment Debug - Invoice ID:", invoiceToUse.id);
     setIsProcessingPayment(true);
     payExistingInvoiceMutation.mutate({
-      invoiceId: invoiceToUse.id,
+      invoiceId: Number(invoiceToUse.id), // Ensure it's a number
       paymentMethod,
       receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount
     });
