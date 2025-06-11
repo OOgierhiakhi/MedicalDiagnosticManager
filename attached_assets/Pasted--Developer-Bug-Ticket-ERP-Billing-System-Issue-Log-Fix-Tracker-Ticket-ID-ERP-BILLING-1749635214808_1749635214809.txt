@@ -1,0 +1,97 @@
+**Developer Bug Ticket: ERP Billing System – Issue Log & Fix Tracker**
+
+**Ticket ID:** ERP-BILLING-20250611-001
+**Date:** 11th June 2025
+**Module:** Billing, Payment Processing, Invoice Lifecycle, Receipt Generation, UI Workflow
+**Environment:** Replit ERP – Production/Test Instance
+**Reported By:** Dr. Ogierhiakhi Omokaro
+
+---
+
+## 🔒 RESOLVED AND LOCKED (Do Not Alter Unless Broken)
+
+The following issues have been fixed, tested, and are considered stable:
+
+1. ✅ **Non-cash payment methods (Card and Transfer)** were failing with `400: Invalid payment method`. This has been resolved.
+2. ✅ **Invoices now persist** in the Invoice Management tab and are reflected in the dashboard summary.
+3. ✅ **Duplicate invoice creation** for already billed services was fixed by properly linking invoice status to services.
+
+**Do not re-edit or overwrite these unless an error is explicitly reported.**
+
+---
+
+## 🔧 OPEN / PENDING ISSUES (To Be Fixed)
+
+The following issues remain unresolved and should be addressed without modifying previously fixed modules:
+
+### 1. Invoice Workflow Behavior Is Incorrect
+
+* The "Create Invoice" button currently processes payments directly, skipping the invoice preview or confirmation phase.
+* Expected behavior: "Create Invoice" should generate a pending invoice and list the patient under the payment tab, allowing payment to be processed separately.
+* Action: Restore proper two-step workflow — billing first, then payment.
+
+### 2. Missing Receipt Print/Download Option After Payment
+
+* After "Payment Processed" notification (e.g., `#RCP-2025-1787`), no button or link is available to view or print the receipt.
+* Action: Add a clickable button to preview/download receipt immediately after payment, and enable reprint from invoice history.
+
+### 3. Receipt Copy Configuration Required
+
+* A single receipt is currently generated.
+* Action: Design receipt layout with multiple labeled copies:
+
+  * "Patient Copy"
+  * "Cashier Copy"
+  * One copy per service unit included in the invoice (e.g., Lab, Imaging, ECG).
+* The receipt print prompt should include options to **Print** or **Cancel**, before triggering the print dialog.
+
+### 4. Lab Status and Home Dashboard Totals Not Updating
+
+* Collected Today and Total Outstanding do not always reflect real-time payments.
+* Lab test status metrics are not refreshing across tabs (Pending, In Progress, Completed).
+* Action: Rebind or refresh metrics after new entries or status changes.
+
+### 5. Invalid Date in Imaging (Ultrasound) Tab
+
+* The appointment schedule shows “Invalid Date” in the study time field.
+* Action: Fix date parsing logic (likely incorrect datetime format or undefined timestamp).
+
+### 6. Start Study Button Not Functioning in Imaging
+
+* Clicking "Start Study" does not trigger status transition.
+* Action: Check JS/React handlers or missing API linkage to study status.
+
+### 7. Specimen Collection Step Displayed in Non-Lab Services
+
+* Specimen collection prompt is incorrectly shown in ECG, Echo, and Ultrasound units.
+* Action: Conditionally hide this step for all non-laboratory service types.
+
+---
+
+## ✅ Development Guidance
+
+To prevent regression:
+
+* **Retain all resolved functions exactly as they are** unless re-opened.
+* Use version control or backup snapshots before applying new changes.
+* Verify database writes, backend API routing, and UI state updates independently.
+
+---
+
+## 🧪 QA Regression Checklist (Post Fix):
+
+* [ ] Card, Transfer, and Cash payments work without error
+* [ ] All new invoices show in management and summary
+* [ ] No duplicate invoice generated for previously billed services
+* [ ] Invoice creation and payment follow correct 2-step logic
+* [ ] Print/download buttons appear after payment
+* [ ] Receipt is generated with Patient, Cashier, and Service Unit copies
+* [ ] Print prompt includes Cancel and Confirm buttons
+* [ ] Home dashboard totals and lab statuses update in real time
+* [ ] Imaging tabs render correct dates and start button triggers status change
+* [ ] Specimen collection logic only appears for lab-related workflows
+
+---
+
+**Priority:** Critical
+**Status:** IN PROGRESS

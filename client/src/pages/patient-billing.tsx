@@ -51,6 +51,8 @@ export default function PatientBilling() {
   const [lastReceiptNumber, setLastReceiptNumber] = useState<string>("");
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<any>(null);
+  const [workflowStep, setWorkflowStep] = useState<"billing" | "payment">("billing");
 
   // Service master list with different pricing tiers
   const serviceMasterList = [
@@ -231,6 +233,42 @@ export default function PatientBilling() {
   const discount = 0; // Can be implemented later
   const totalAmount = subtotal + tax - discount;
 
+  // Create invoice without payment
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (billData: PatientBill) => {
+      const response = await apiRequest("POST", "/api/create-invoice", {
+        ...billData,
+        tenantId: user?.tenantId,
+        branchId: user?.branchId,
+        timestamp: new Date().toISOString(),
+        staffInfo: {
+          id: user?.id,
+          username: user?.username,
+          department: "Billing"
+        }
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setCurrentInvoice(data);
+      setWorkflowStep("payment");
+      toast({
+        title: "Invoice Created",
+        description: `Invoice #${data.invoiceNumber} created. Please proceed to payment.`,
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/invoices/patient/${selectedPatient?.id}/unpaid`] });
+    },
+    onError: () => {
+      toast({
+        title: "Invoice Creation Failed",
+        description: "Failed to create invoice. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Process payment mutation for new invoices
   const processPaymentMutation = useMutation({
     mutationFn: async (billData: PatientBill) => {
@@ -334,6 +372,64 @@ export default function PatientBilling() {
       setIsProcessingPayment(false);
     },
   });
+
+  // Handle creating invoice without payment
+  const handleCreateInvoice = async () => {
+    if (!selectedPatient || selectedServices.length === 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a patient and at least one service.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const billData: PatientBill = {
+      patientId: selectedPatient.id,
+      patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`,
+      services: selectedServices,
+      subtotal,
+      tax,
+      discount,
+      totalAmount,
+      paymentMethod: "pending", // Mark as pending payment
+      staffId: user?.id || 0,
+      receivingBankAccountId: null
+    };
+
+    createInvoiceMutation.mutate(billData);
+  };
+
+  // Handle payment for current invoice
+  const handlePayCurrentInvoice = async () => {
+    const invoiceToUse = currentInvoice || selectedInvoice;
+    
+    if (!invoiceToUse) {
+      toast({
+        title: "No Invoice Selected",
+        description: "Please select an invoice to pay.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate bank account selection for non-cash payments
+    if (paymentMethod !== "cash" && !selectedBankAccount) {
+      toast({
+        title: "Bank Account Required",
+        description: "Please select a diagnostic center bank account for non-cash payments.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    payExistingInvoiceMutation.mutate({
+      invoiceId: invoiceToUse.id,
+      paymentMethod,
+      receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount
+    });
+  };
 
   const handleProcessPayment = async () => {
     if (!selectedPatient || selectedServices.length === 0) {
@@ -805,23 +901,99 @@ export default function PatientBilling() {
             </CardContent>
           </Card>
 
-          {/* Process Payment */}
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={selectedInvoice ? handlePayExistingInvoice : handleProcessPayment}
-            disabled={
-              !selectedPatient || 
-              isProcessingPayment || 
-              (!selectedInvoice && selectedServices.length === 0)
-            }
-          >
-            {isProcessingPayment ? "Processing..." : 
-             selectedInvoice ? 
-               `Pay Invoice - ₦${parseFloat(selectedInvoice.totalAmount).toLocaleString()}` :
-               `Create Invoice - ₦${totalAmount.toLocaleString()}`
-            }
-          </Button>
+          {/* Workflow Buttons */}
+          {workflowStep === "billing" ? (
+            <div className="space-y-3">
+              {/* Create Invoice Button */}
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handleCreateInvoice}
+                disabled={
+                  !selectedPatient || 
+                  selectedServices.length === 0 ||
+                  createInvoiceMutation.isPending
+                }
+                variant="outline"
+              >
+                {createInvoiceMutation.isPending ? "Creating Invoice..." : 
+                 `Create Invoice - ₦${totalAmount.toLocaleString()}`
+                }
+              </Button>
+              
+              {/* Quick Payment Button (legacy) */}
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handleProcessPayment}
+                disabled={
+                  !selectedPatient || 
+                  isProcessingPayment || 
+                  selectedServices.length === 0
+                }
+              >
+                {isProcessingPayment ? "Processing Payment..." : 
+                 `Quick Pay - ₦${totalAmount.toLocaleString()}`
+                }
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Current Invoice Info */}
+              {currentInvoice && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <p className="font-semibold">Invoice Created</p>
+                      <p className="text-lg font-mono">{currentInvoice.invoiceNumber}</p>
+                      <p className="text-muted-foreground">Amount: ₦{currentInvoice.totalAmount?.toLocaleString()}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Pay Invoice Button */}
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handlePayCurrentInvoice}
+                disabled={isProcessingPayment}
+              >
+                {isProcessingPayment ? "Processing Payment..." : 
+                 `Pay Invoice - ₦${(currentInvoice?.totalAmount || selectedInvoice?.totalAmount || 0).toLocaleString()}`
+                }
+              </Button>
+              
+              {/* Back to Billing Button */}
+              <Button
+                size="lg"
+                className="w-full"
+                variant="outline"
+                onClick={() => {
+                  setWorkflowStep("billing");
+                  setCurrentInvoice(null);
+                  setSelectedServices([]);
+                }}
+              >
+                Create New Invoice
+              </Button>
+            </div>
+          )}
+
+          {/* Existing Invoice Payment */}
+          {selectedInvoice && workflowStep === "billing" && (
+            <Button
+              size="lg"
+              className="w-full mt-3"
+              onClick={handlePayExistingInvoice}
+              disabled={isProcessingPayment}
+              variant="secondary"
+            >
+              {isProcessingPayment ? "Processing..." : 
+               `Pay Existing Invoice - ₦${parseFloat(selectedInvoice.totalAmount).toLocaleString()}`
+              }
+            </Button>
+          )}
         </div>
       </div>
 
