@@ -1072,64 +1072,73 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Generate thermal receipt (text format for POS printers) - MUST come before general receipt route
-  app.get("/api/invoices/:id/thermal-receipt", async (req, res) => {
+  // Test endpoint to verify routing
+  app.get("/api/test-route", (req, res) => {
+    console.log("TEST ROUTE HIT - routing is working");
+    res.json({ message: "Test route working", timestamp: new Date().toISOString() });
+  });
+
+  // Generate thermal receipt (text format for POS printers) - FIXED ROUTE
+  app.get("/api/thermal-receipt/:invoiceId", async (req, res) => {
     console.log("=== THERMAL RECEIPT ROUTE HIT ===");
     console.log("Request params:", req.params);
     console.log("Request query:", req.query);
-    console.log("User authenticated:", req.isAuthenticated());
+    console.log("Authentication status:", req.isAuthenticated());
     
     try {
       if (!req.isAuthenticated()) {
-        console.log("Authentication failed");
+        console.log("Authentication failed - returning 401");
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = parseInt(req.params.invoiceId);
       const paperSize = req.query.paperSize as string || '58mm';
       
-      console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}, user: ${req.user?.username}`);
+      console.log(`Processing thermal receipt for invoice ${invoiceId}, paper size: ${paperSize}`);
       
       if (isNaN(invoiceId)) {
-        console.log(`Invalid invoice ID provided: ${req.params.id}`);
+        console.log("Invalid invoice ID - returning 400");
         return res.status(400).json({ message: "Invalid invoice ID" });
       }
       
       const invoice = await storage.getInvoice(invoiceId);
-      
       if (!invoice) {
+        console.log("Invoice not found - returning 404");
         return res.status(404).json({ message: "Invoice not found" });
       }
-      
-      console.log(`Invoice found: ${invoice.invoiceNumber}, tests:`, invoice.tests);
+
+      console.log(`Invoice found: ${invoice.invoiceNumber}`);
 
       const patient = await storage.getPatient(invoice.patientId);
       if (!patient) {
+        console.log("Patient not found - returning 404");
         return res.status(404).json({ message: "Patient not found" });
       }
+
+      console.log(`Patient found: ${patient.firstName} ${patient.lastName}`);
 
       const branch = await storage.getBranch(invoice.branchId);
       const tenant = await storage.getTenant(invoice.tenantId);
 
-      // Get test details from invoice - properly parse JSON string and enrich with test names
+      // Parse and enrich test data
       let tests = [];
       if (typeof invoice.tests === 'string') {
         try {
           tests = JSON.parse(invoice.tests);
         } catch (e) {
-          console.error('Error parsing invoice tests JSON:', e);
+          console.error('Error parsing invoice tests:', e);
           tests = [];
         }
       } else if (Array.isArray(invoice.tests)) {
         tests = invoice.tests;
       }
       
-      // Enrich test data with proper test names from database if testId is available
+      console.log(`Processing ${tests.length} tests for thermal receipt`);
+      
+      // Enrich test data with proper test names
       const enrichedTests = [];
       for (const test of tests) {
         let enrichedTest = { ...test };
-        
-        // If we have a testId but missing name, fetch from database
         if (test.testId && !test.name && !test.testName) {
           try {
             const testDetails = await storage.getTest(test.testId);
@@ -1141,12 +1150,15 @@ export function registerRoutes(app: Express): Server {
             console.error('Error fetching test details:', error);
           }
         }
-        
         enrichedTests.push(enrichedTest);
       }
       
-      // Generate thermal receipt text with specified paper size
+      console.log("Generating thermal receipt text...");
+      
+      // Generate thermal receipt
       const receiptText = generateThermalReceipt(invoice, patient, enrichedTests, branch, tenant, paperSize);
+      
+      console.log(`Generated thermal receipt (${receiptText.length} characters)`);
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="thermal-receipt-${paperSize}-${invoice.invoiceNumber}.txt"`);
