@@ -81,6 +81,8 @@ export default function InvoiceManagement() {
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<Invoice | null>(null);
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState("");
+  const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
+  const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
 
   // Query for patients
   const { data: patients } = useQuery({
@@ -178,11 +180,17 @@ export default function InvoiceManagement() {
       const response = await apiRequest("PUT", `/api/invoices/${invoiceId}/pay`, paymentData);
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Payment Processed",
-        description: "Payment has been successfully processed and recorded.",
-      });
+    onSuccess: (response) => {
+      const paymentData = {
+        receiptNumber: response.receiptNumber,
+        invoiceNumber: selectedInvoice?.invoiceNumber,
+        amount: selectedInvoice?.totalAmount,
+        paymentMethod: paymentMethod,
+        invoiceId: selectedInvoice?.id
+      };
+      
+      setPaymentSuccessData(paymentData);
+      setShowPaymentSuccessDialog(true);
       refetchInvoices();
       setShowPaymentDialog(false);
       setSelectedInvoice(null);
@@ -978,6 +986,76 @@ export default function InvoiceManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Payment Success Dialog */}
+      <AlertDialog open={showPaymentSuccessDialog} onOpenChange={setShowPaymentSuccessDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Payment Processed Successfully</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-2">
+                <p>Payment has been successfully processed and recorded.</p>
+                <div className="bg-green-50 p-3 rounded border">
+                  <div className="space-y-1 text-sm">
+                    <div><strong>Receipt Number:</strong> {paymentSuccessData?.receiptNumber}</div>
+                    <div><strong>Invoice:</strong> {paymentSuccessData?.invoiceNumber}</div>
+                    <div><strong>Amount:</strong> ₦{parseFloat(paymentSuccessData?.amount || "0").toLocaleString()}</div>
+                    <div><strong>Payment Method:</strong> {paymentSuccessData?.paymentMethod?.toUpperCase()}</div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Would you like to print the receipt? Multiple copies will be generated:
+                  Patient Copy, Cashier Copy, and Service Department Copy.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowPaymentSuccessDialog(false);
+              setPaymentSuccessData(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                try {
+                  if (paymentSuccessData?.invoiceId) {
+                    const response = await fetch(`/api/invoices/${paymentSuccessData.invoiceId}/receipt`);
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `receipt-${paymentSuccessData.receiptNumber}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      
+                      toast({
+                        title: "Receipt Printed",
+                        description: "Receipt with multiple copies has been generated and downloaded.",
+                      });
+                    }
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Print Failed",
+                    description: "Could not generate receipt for printing.",
+                    variant: "destructive",
+                  });
+                }
+                setShowPaymentSuccessDialog(false);
+                setPaymentSuccessData(null);
+              }}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
