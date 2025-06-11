@@ -360,22 +360,23 @@ export default function PatientBilling() {
       paymentMethod: string; 
       receivingBankAccountId: number | null 
     }) => {
-      return apiRequest("POST", `/api/invoices/${paymentData.invoiceId}/payment`, {
+      const response = await apiRequest("POST", `/api/invoices/${paymentData.invoiceId}/payment`, {
         paymentMethod: paymentData.paymentMethod,
         receivingBankAccountId: paymentData.receivingBankAccountId
       });
+      return response.json(); // Parse the JSON response
     },
-    onSuccess: async (response) => {
-      // Extract receipt data from API response
-      const responseData = await response.json();
+    onSuccess: (data, variables) => {
+      // Use the invoice data from the mutation variables since the payment was successful
+      const invoiceUsed = currentInvoice || selectedInvoice;
       
       // Show interactive payment success dialog instead of passive toast
       setPaymentSuccessData({
-        receiptNumber: responseData.receiptNumber || `RCP-${Date.now()}`,
-        invoiceNumber: selectedInvoice?.invoiceNumber || currentInvoice?.invoiceNumber,
-        amount: selectedInvoice?.totalAmount || currentInvoice?.totalAmount || "0",
+        receiptNumber: data.receiptNumber || `RCP-${Date.now()}`,
+        invoiceNumber: invoiceUsed?.invoiceNumber,
+        amount: invoiceUsed?.totalAmount || "0",
         paymentMethod: paymentMethod,
-        invoiceId: selectedInvoice?.id || currentInvoice?.id
+        invoiceId: variables.invoiceId // Use the actual invoice ID from the mutation
       });
       setShowPaymentSuccessDialog(true);
       
