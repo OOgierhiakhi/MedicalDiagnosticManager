@@ -671,12 +671,7 @@ export default function InvoiceManagement() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-medium">
-                        ₦{(() => {
-                          const amount = invoice.totalAmount;
-                          const cleanAmount = amount?.toString().replace(/[^\d.-]/g, '') || '0';
-                          const numAmount = parseFloat(cleanAmount);
-                          return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
-                        })()}
+{formatCurrency(invoice.totalAmount)}
                       </div>
                       <div className="flex gap-2 mt-2">
                         {invoice.paymentStatus === 'unpaid' && (
@@ -777,12 +772,7 @@ export default function InvoiceManagement() {
                 </div>
                 <div className="flex justify-between">
                   <span>Amount Due:</span>
-                  <span className="font-medium">₦{(() => {
-                    const amount = selectedInvoice.totalAmount || '0';
-                    const cleanAmount = amount.toString().replace(/[^\d.-]/g, '');
-                    const numAmount = parseFloat(cleanAmount);
-                    return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
-                  })()}</span>
+                  <span className="font-medium">{formatCurrency(selectedInvoice.totalAmount)}</span>
                 </div>
               </div>
 
