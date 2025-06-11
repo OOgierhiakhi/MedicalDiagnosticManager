@@ -954,8 +954,8 @@ export default function PatientBilling() {
                 </Select>
               </div>
 
-              {/* Bank Account Selection for Non-Cash Payments */}
-              {paymentMethod !== "cash" && (
+              {/* Bank Account Selection for Non-Cash Payments - Only show during payment phase */}
+              {paymentMethod !== "cash" && workflowStep === "payment" && (
                 <div>
                   <Label>Diagnostic Center Bank Account *</Label>
                   <Select 

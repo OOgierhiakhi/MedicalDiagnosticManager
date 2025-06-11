@@ -412,17 +412,19 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
   receipt += 'SERVICES:\n';
   let total = 0;
   tests.forEach((test, index) => {
-    const price = typeof test.price === 'string' ? parseFloat(test.price) : (test.price || 0);
+    const price = typeof test.price === 'string' ? parseFloat(test.price) : 
+                  typeof test.total === 'string' ? parseFloat(test.total) :
+                  (test.price || test.total || 0);
     total += price;
     
     // Enhanced test name extraction - try multiple properties
-    const testName = test.testName || test.name || test.test_name || test.service || test.description || `Service ${index + 1}`;
-    if (testName.length > width) {
-      receipt += testName.substring(0, width - 3) + '...\n';
-    } else {
-      receipt += testName + '\n';
-    }
-    receipt += formatLine('', `₦${price.toLocaleString()}`) + '\n';
+    const testName = test.testName || test.name || test.test_name || test.service || test.description || 
+                     test.serviceName || test.service_name || `Service ${index + 1}`;
+    
+    // Format service name
+    const formattedName = testName.length > width ? testName.substring(0, width - 3) + '...' : testName;
+    receipt += formattedName + '\n';
+    receipt += formatLine('  Qty: 1', `₦${price.toLocaleString()}`) + '\n';
   });
   
   receipt += dashes + '\n';
