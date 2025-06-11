@@ -1084,11 +1084,17 @@ export function registerRoutes(app: Express): Server {
       
       console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}`);
       
+      if (isNaN(invoiceId)) {
+        return res.status(400).json({ message: "Invalid invoice ID" });
+      }
+      
       const invoice = await storage.getInvoice(invoiceId);
       
       if (!invoice) {
         return res.status(404).json({ message: "Invoice not found" });
       }
+      
+      console.log(`Invoice found: ${invoice.invoiceNumber}, tests:`, invoice.tests);
 
       const patient = await storage.getPatient(invoice.patientId);
       if (!patient) {
@@ -1141,7 +1147,7 @@ export function registerRoutes(app: Express): Server {
 
     } catch (error) {
       console.error("Error generating thermal receipt:", error);
-      res.status(500).json({ message: "Internal server error", error: error.message });
+      res.status(500).json({ message: "Internal server error", error: String(error) });
     }
   });
 
