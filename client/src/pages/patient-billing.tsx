@@ -53,6 +53,8 @@ export default function PatientBilling() {
   const [receiptData, setReceiptData] = useState<any>(null);
   const [currentInvoice, setCurrentInvoice] = useState<any>(null);
   const [workflowStep, setWorkflowStep] = useState<"billing" | "payment">("billing");
+  const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
+  const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
 
   // Service master list with different pricing tiers
   const serviceMasterList = [
@@ -143,16 +145,31 @@ export default function PatientBilling() {
       setShowServiceSelection(false); // Don't show service selection by default
     } else if (selectedPatient && unpaidInvoices.length === 0 && scheduledTests.length > 0) {
       // No unpaid invoices but has scheduled tests - automatically populate services
-      const serviceItems = scheduledTests.map((test: any) => ({
-        id: test.testId,
-        name: test.testName,
-        category: test.category || 'Laboratory',
-        defaultPrice: test.price || 0,
-        quantity: 1,
-        unitPrice: test.price || 0,
-        total: test.price || 0
-      }));
-      setSelectedServices(serviceItems);
+      // Remove duplicates by creating a Map with testId as key
+      const uniqueTests = new Map();
+      scheduledTests.forEach((test: any) => {
+        if (!uniqueTests.has(test.testId)) {
+          uniqueTests.set(test.testId, test);
+        }
+      });
+      
+      const serviceItems = Array.from(uniqueTests.values()).map((test: any) => {
+        const price = parseFloat(test.testPrice) || 0;
+        return {
+          id: test.testId,
+          name: test.testName,
+          category: test.category || 'Laboratory',
+          defaultPrice: price,
+          quantity: 1,
+          unitPrice: price,
+          total: price
+        };
+      });
+      
+      // Only update if the services have actually changed
+      if (JSON.stringify(serviceItems) !== JSON.stringify(selectedServices)) {
+        setSelectedServices(serviceItems);
+      }
       setShowServiceSelection(false);
       setSelectedInvoice(null);
     } else if (selectedPatient && unpaidInvoices.length === 0 && scheduledTests.length === 0) {
@@ -347,11 +364,17 @@ export default function PatientBilling() {
         receivingBankAccountId: paymentData.receivingBankAccountId
       });
     },
-    onSuccess: () => {
-      toast({
-        title: "Payment Successful",
-        description: "Invoice payment has been processed successfully.",
+    onSuccess: (data) => {
+      // Show interactive payment success dialog instead of passive toast
+      setPaymentSuccessData({
+        receiptNumber: data.receiptNumber || `RCP-${Date.now()}`,
+        invoiceNumber: selectedInvoice?.invoiceNumber || currentInvoice?.invoiceNumber,
+        amount: selectedInvoice?.totalAmount || currentInvoice?.totalAmount || "0",
+        paymentMethod: paymentMethod,
+        invoiceId: selectedInvoice?.id || currentInvoice?.id
       });
+      setShowPaymentSuccessDialog(true);
+      
       // Reset state
       setPaymentMethod("cash");
       setSelectedBankAccount(null);
@@ -904,7 +927,7 @@ export default function PatientBilling() {
           {/* Workflow Buttons */}
           {workflowStep === "billing" ? (
             <div className="space-y-3">
-              {/* Create Invoice Button */}
+              {/* Create Invoice Button - First Step */}
               <Button
                 size="lg"
                 className="w-full"
@@ -914,26 +937,9 @@ export default function PatientBilling() {
                   selectedServices.length === 0 ||
                   createInvoiceMutation.isPending
                 }
-                variant="outline"
               >
                 {createInvoiceMutation.isPending ? "Creating Invoice..." : 
                  `Create Invoice - ₦${totalAmount.toLocaleString()}`
-                }
-              </Button>
-              
-              {/* Quick Payment Button (legacy) */}
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleProcessPayment}
-                disabled={
-                  !selectedPatient || 
-                  isProcessingPayment || 
-                  selectedServices.length === 0
-                }
-              >
-                {isProcessingPayment ? "Processing Payment..." : 
-                 `Quick Pay - ₦${totalAmount.toLocaleString()}`
                 }
               </Button>
             </div>
