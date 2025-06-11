@@ -678,7 +678,7 @@ export default function InvoiceManagement() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-medium">
-{formatCurrency(invoice.totalAmount)}
+                        {formatCurrency(invoice.totalAmount || '0')}
                       </div>
                       <div className="flex gap-2 mt-2">
                         {invoice.paymentStatus === 'unpaid' && (
