@@ -670,28 +670,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get patient tests
-  app.get("/api/patient-tests", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
 
-      const branchId = req.query.branchId ? parseInt(req.query.branchId as string) : (req.user!.branchId || 1);
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-      const paidOnly = req.query.paidOnly === 'true';
-
-      if (isNaN(branchId) || branchId <= 0) {
-        return res.status(400).json({ message: "Invalid branch ID" });
-      }
-
-      const patientTests = await storage.getPatientTestsByBranch(branchId, limit, paidOnly);
-      res.json(patientTests);
-    } catch (error) {
-      console.error("Error fetching patient tests:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Schedule patient test
   app.post("/api/patient-tests", async (req, res) => {
@@ -751,6 +730,7 @@ export function registerRoutes(app: Express): Server {
         console.log('Using effective branch ID:', effectiveBranchId);
 
         try {
+          // Get all patient tests for the specified patient and status
           const patientTestsWithDetails = await db
             .select({
               id: patientTests.id,
@@ -776,6 +756,43 @@ export function registerRoutes(app: Express): Server {
               )
             )
             .orderBy(desc(patientTests.scheduledAt));
+
+          // If requesting scheduled tests for billing, filter out already-billed tests
+          if (status === 'scheduled') {
+            // Get all paid invoices for this patient to check which tests were already billed
+            const paidInvoices = await db
+              .select({
+                tests: invoices.tests
+              })
+              .from(invoices)
+              .where(
+                and(
+                  eq(invoices.patientId, parseInt(patientId as string)),
+                  eq(invoices.paymentStatus, 'paid')
+                )
+              );
+
+            // Extract test IDs from paid invoices
+            const billedTestIds = new Set();
+            paidInvoices.forEach(invoice => {
+              if (invoice.tests && Array.isArray(invoice.tests)) {
+                invoice.tests.forEach((test: any) => {
+                  if (test.testId) {
+                    billedTestIds.add(test.testId);
+                  }
+                });
+              }
+            });
+
+            // Filter out already-billed tests
+            const unbilledTests = patientTestsWithDetails.filter(test => 
+              !billedTestIds.has(test.testId)
+            );
+
+            console.log('Found patient tests (filtered):', unbilledTests);
+            console.log('Billed test IDs to exclude:', Array.from(billedTestIds));
+            return res.json(unbilledTests);
+          }
 
           console.log('Found patient tests:', patientTestsWithDetails);
           return res.json(patientTestsWithDetails);

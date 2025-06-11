@@ -1,0 +1,85 @@
+**Developer Bug Ticket: Non-Cash Payment Methods Failing (400 Error) and Invoice Visibility Failure**
+
+**Ticket ID:** ERP-BILLING-20250611-001
+**Date:** 11th June 2025
+**Module:** Payment Processing & Invoice Management
+**Environment:** Replit ERP - Production/Test Instance
+**Reported By:** Dr. Ogierhiakhi Omokaro
+
+---
+
+### **Summary:**
+
+Multiple critical billing system errors have been observed:
+
+#### 1. Non-Cash Payment Methods Failing:
+
+Non-cash payment methods (Card and Bank Transfer) are currently failing with the error:
+
+> 400: {"error":"Invalid payment method"}
+
+#### 2. Invoices Not Displayed or Recognized:
+
+* Successfully created invoices are not showing up in the dashboard or invoice management tab.
+* After generating an invoice and processing payment, returning to the same patient shows the services as pending again — as though no invoice exists.
+* The system does not recognize that billing was completed and allows duplicate or redundant invoice creation.
+
+These errors affect payment collection, reporting accuracy, and audit integrity.
+
+---
+
+### **Steps to Reproduce:**
+
+1. Create an invoice for a patient (e.g., Richard Guobadia).
+2. Complete payment and observe success message (e.g., "Receipt generated").
+3. Return to the patient billing tab — system still allows re-billing same services.
+4. Go to Billing Dashboard → Invoice Management → No invoices found.
+5. Attempt card or transfer payment → error 400: Invalid payment method.
+
+---
+
+### **Impact:**
+
+* Duplicate service billing and payment processing risk
+* Loss of invoice visibility on billing dashboard
+* Financial records do not reflect true outstanding or collected amounts
+* Staff confusion due to inconsistent system behavior
+
+---
+
+### **Action Required:**
+
+* [ ] Fix the 400 error for non-cash payments (as per original ticket)
+* [ ] Investigate why invoices do not persist or display in the dashboard and management tab
+* [ ] Ensure that once an invoice is created:
+
+  * It is saved correctly in the backend
+  * It is visible under Invoice Management
+  * It prevents re-selection or re-billing of the same services for the same visit unless canceled
+* [ ] Ensure payment processing updates invoice status to "Paid" and hides from "Pending" lists
+* [ ] Check if service-to-invoice linkage is broken or not recorded properly
+
+---
+
+### **Regression Testing Checklist (Post Fix):**
+
+* [ ] Card and Bank Transfer payments processed successfully
+* [ ] All invoices appear in Invoice Management tab and dashboard counts
+* [ ] Previously billed services do not reappear as new or unbilled
+* [ ] Collected Today and Outstanding Amount totals reflect real-time data
+* [ ] Duplicate invoice creation blocked unless manually triggered
+* [ ] Payment receipts and logs remain intact and accurate
+
+---
+
+### **Post-Resolution Deliverables:**
+
+* [ ] Summary of root cause
+* [ ] Code diff or commit reference
+* [ ] Confirmation of no impact on other billing modules
+* [ ] Suggest automated test or invoice audit logic to prevent recurrence
+
+---
+
+**Priority:** Critical
+**Status:** OPEN

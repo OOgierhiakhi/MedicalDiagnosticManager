@@ -108,8 +108,11 @@ export default function InvoiceManagement() {
   const { data: invoices, refetch: refetchInvoices } = useQuery({
     queryKey: ["/api/invoices", user?.branchId, invoiceFilter === "all" ? undefined : invoiceFilter],
     queryFn: async () => {
+      if (!user?.branchId) {
+        throw new Error("Branch ID is required");
+      }
       const params = new URLSearchParams({
-        branchId: user?.branchId?.toString() || "",
+        branchId: user.branchId.toString(),
       });
       if (invoiceFilter !== "all") {
         params.append("status", invoiceFilter);
