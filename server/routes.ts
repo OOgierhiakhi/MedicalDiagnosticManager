@@ -4083,7 +4083,7 @@ export function registerRoutes(app: Express): Server {
       const { paymentMethod, receivingBankAccountId } = req.body;
       
       // Validate payment method
-      if (!["cash", "pos", "bank_transfer"].includes(paymentMethod)) {
+      if (!["cash", "card", "transfer", "pos", "bank_transfer"].includes(paymentMethod)) {
         return res.status(400).json({ error: "Invalid payment method" });
       }
 

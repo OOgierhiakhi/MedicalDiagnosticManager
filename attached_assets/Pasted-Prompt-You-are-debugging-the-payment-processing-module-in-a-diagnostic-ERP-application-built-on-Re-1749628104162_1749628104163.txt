@@ -1,0 +1,54 @@
+Prompt:
+You are debugging the payment processing module in a diagnostic ERP application built on Replit. As of today, non-cash payment options (Card and Bank Transfer) are failing during payment submission with the following error:
+
+> 400: {"error":"Invalid payment method"}
+
+The issue is **new**, and these same payment methods were working correctly yesterday. The breakdown only affects **non-cash payments**, while **cash payments are still processed successfully**.
+
+### Objective:
+- Identify and resolve the root cause of this 400 error for card and bank transfer payments.
+- Restore full payment functionality for all payment types.
+
+---
+
+### Details to Investigate:
+
+1. **Frontend Validation**
+   - Ensure the correct value (`"card"`, `"bank_transfer"`, etc.) is being sent from the form’s `paymentMethod` field.
+   - Confirm that radio buttons are passing the exact expected enum/string to the backend.
+
+2. **Backend Controller/Route**
+   - Check the backend payment processor for recent changes that could affect how payment method values are parsed or matched.
+   - Confirm that non-cash methods are still allowed and mapped correctly in the switch/case or condition block.
+
+3. **Allowed Values List**
+   - Verify if a new schema or enum was introduced in the database, validation schema (e.g., Joi/Zod), or backend controller that may have restricted or renamed allowed values.
+
+4. **Version Control Diff**
+   - Review yesterday’s working version of the payment logic and compare it to the current version.
+   - Identify any code or config changes pushed within the last 24 hours affecting:
+     - `payment-method-options`
+     - API route validation
+     - Defaulting logic
+     - Case sensitivity
+
+---
+
+### Regression Safety Requirements:
+
+✅ Confirm that:
+- Cash, Card, and Bank Transfer payment methods all work reliably
+- Payment records are saved with the correct method and bank account
+- Dashboard summaries reflect updated totals by method
+- No duplicate or corrupted entries are created
+- All previously working invoices remain payable
+- Reports and receipt logs still function as expected
+
+---
+
+### Deliverable:
+After fixing the issue, document:
+- The cause of the 400 error
+- What was changed to resolve it
+- Any residual risks or related components affected
+- Regression checklist completed
