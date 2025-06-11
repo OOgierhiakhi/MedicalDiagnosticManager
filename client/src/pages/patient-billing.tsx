@@ -445,7 +445,7 @@ export default function PatientBilling() {
     if (!thermalPrintInvoice) return;
     
     try {
-      const response = await fetch(`/api/invoices/${thermalPrintInvoice.id}/thermal-receipt?paperSize=${paperSize}`);
+      const response = await fetch(`/api/thermal-receipt/${thermalPrintInvoice.id}?paperSize=${paperSize}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -461,6 +461,13 @@ export default function PatientBilling() {
           description: `${paperSize} POS receipt ready for thermal printer`,
         });
         setShowThermalPrintDialog(false);
+      } else {
+        const errorText = await response.text();
+        toast({
+          title: "Download Failed",
+          description: `Could not generate thermal receipt: ${response.status}`,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       toast({
