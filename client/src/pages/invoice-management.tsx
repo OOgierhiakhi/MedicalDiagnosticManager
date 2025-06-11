@@ -16,6 +16,7 @@ import { Search, Plus, Receipt, Eye, CreditCard, Banknote, Smartphone, FileText,
 import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/currency";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface Patient {
@@ -672,8 +673,8 @@ export default function InvoiceManagement() {
                       <div className="text-lg font-medium">
                         ₦{(() => {
                           const amount = invoice.totalAmount;
-                          console.log('Invoice amount:', amount, 'Type:', typeof amount, 'For invoice:', invoice.invoiceNumber);
-                          const numAmount = parseFloat(amount?.toString() || '0');
+                          const cleanAmount = amount?.toString().replace(/[^\d.-]/g, '') || '0';
+                          const numAmount = parseFloat(cleanAmount);
                           return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
                         })()}
                       </div>
@@ -777,11 +778,9 @@ export default function InvoiceManagement() {
                 <div className="flex justify-between">
                   <span>Amount Due:</span>
                   <span className="font-medium">₦{(() => {
-                    console.log('Selected invoice data:', selectedInvoice);
                     const amount = selectedInvoice.totalAmount || '0';
-                    console.log('Amount value:', amount, 'Type:', typeof amount);
-                    const numAmount = parseFloat(amount.toString());
-                    console.log('Parsed amount:', numAmount);
+                    const cleanAmount = amount.toString().replace(/[^\d.-]/g, '');
+                    const numAmount = parseFloat(cleanAmount);
                     return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
                   })()}</span>
                 </div>
