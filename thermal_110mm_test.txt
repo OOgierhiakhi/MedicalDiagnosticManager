@@ -1,0 +1,42 @@
+                         ORIENT MEDICAL
+                       DIAGNOSTIC CENTER
+                         Central Branch
+               123 Medical Drive, Lagos, Nigeria
+                       +234-800-ORIENT-1
+================================================================
+                        PAYMENT RECEIPT
+================================================================
+Receipt #:                                       INV-202506-0001
+Date:                                                 04/06/2025
+Time:                                                   13:16:27
+----------------------------------------------------------------
+PATIENT INFORMATION:
+Name:                                               jason agbons
+ID:                                                   P-2025-111
+Phone:                                                 234688999
+----------------------------------------------------------------
+SERVICES:
+Complete Blood Count (CBC)
+  Qty: 1                                                  ₦5,000
+----------------------------------------------------------------
+Subtotal:                                                 ₦5,000
+TOTAL:                                                    ₦5,000
+================================================================
+PAYMENT DETAILS:
+Method:                                                 TRANSFER
+Amount Paid:                                              ₦5,000
+Status:                                                     PAID
+----------------------------------------------------------------
+                     Thank you for choosing
+                        Orient Medical!
+
+                      For results inquiry:
+                       +234-800-ORIENT-1
+
+                        Visit us online:
+                      www.orientmedical.ng
+
+================================================================
+
+
+
