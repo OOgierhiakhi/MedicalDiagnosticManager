@@ -9,12 +9,21 @@
  * @returns Formatted currency string
  */
 export function formatCurrency(amount: string | number | null | undefined, currency: string = "₦"): string {
-  if (!amount && amount !== 0) return `${currency}0`;
+  // Handle null, undefined, empty string, or 0
+  if (amount === null || amount === undefined || amount === '') return `${currency}0`;
+  if (amount === 0) return `${currency}0`;
   
-  const cleanAmount = amount.toString().replace(/[^\d.-]/g, '');
+  // Convert to string and clean non-numeric characters except dots and dashes
+  const cleanAmount = String(amount).replace(/[^\d.-]/g, '');
+  
+  // Parse as float
   const numAmount = parseFloat(cleanAmount);
   
-  if (isNaN(numAmount)) return `${currency}0`;
+  // Check if parsing resulted in NaN
+  if (isNaN(numAmount)) {
+    console.warn('formatCurrency: Invalid amount received:', amount, 'cleaned:', cleanAmount);
+    return `${currency}0`;
+  }
   
   return `${currency}${numAmount.toLocaleString()}`;
 }

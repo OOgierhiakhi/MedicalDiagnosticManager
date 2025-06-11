@@ -503,7 +503,7 @@ export default function InvoiceManagement() {
                             <div className="text-sm text-gray-500">Code: {test.code}</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-medium">₦{parseFloat(test.price).toLocaleString()}</div>
+                            <div className="font-medium">{formatCurrency(test.price)}</div>
                             {selectedTests.some(t => t.testId === test.id) && (
                               <Badge variant="default" className="text-xs">Added</Badge>
                             )}
@@ -954,7 +954,7 @@ export default function InvoiceManagement() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Amount</Label>
-                  <p className="text-lg font-semibold">₦{parseFloat(selectedInvoiceForView.totalAmount).toLocaleString()}</p>
+                  <p className="text-lg font-semibold">{formatCurrency(selectedInvoiceForView.totalAmount)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Created</Label>
@@ -981,7 +981,7 @@ export default function InvoiceManagement() {
                           <p className="font-medium">{test.name || `Test ${index + 1}`}</p>
                           {test.testId && <p className="text-sm text-gray-500">Test ID: {test.testId}</p>}
                         </div>
-                        <p className="font-semibold">₦{(typeof test.price === 'string' ? parseFloat(test.price) : test.price || 0).toLocaleString()}</p>
+                        <p className="font-semibold">{formatCurrency(test.price)}</p>
                       </div>
                     ))}
                   </div>
