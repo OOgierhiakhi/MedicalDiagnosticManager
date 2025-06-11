@@ -620,7 +620,7 @@ export default function PatientBilling() {
                               {Array.isArray(invoice.tests) ? 
                                 invoice.tests.map((test: any, idx: number) => (
                                   <span key={idx}>
-                                    {test.description || test.name || 'Service'}
+                                    {test.testName || test.name || test.description || 'Service'}
                                     {idx < invoice.tests.length - 1 ? ', ' : ''}
                                   </span>
                                 )) : 
@@ -717,7 +717,17 @@ export default function PatientBilling() {
                           Created: {new Date(selectedInvoice.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <Badge variant="destructive">Unpaid</Badge>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/api/invoices/${selectedInvoice.id}/receipt?status=unpaid`, '_blank')}
+                        >
+                          <Printer className="h-4 w-4 mr-1" />
+                          Print Invoice
+                        </Button>
+                        <Badge variant="destructive">Unpaid</Badge>
+                      </div>
                     </div>
                     
                     <div className="space-y-3">
@@ -727,7 +737,7 @@ export default function PatientBilling() {
                           {Array.isArray(selectedInvoice.tests) ? 
                             selectedInvoice.tests.map((test: any, idx: number) => (
                               <div key={idx} className="flex justify-between p-2 bg-background rounded border">
-                                <span>{test.description || test.name || 'Service'}</span>
+                                <span>{test.testName || test.name || test.description || 'Service'}</span>
                                 <span className="font-medium">
                                   ₦{test.price ? parseFloat(test.price).toLocaleString() : 'N/A'}
                                 </span>
