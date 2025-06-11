@@ -56,6 +56,9 @@ export default function PatientBilling() {
   const [workflowStep, setWorkflowStep] = useState<"billing" | "payment">("billing");
   const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
+  const [showThermalPrintDialog, setShowThermalPrintDialog] = useState(false);
+  const [selectedPaperSize, setSelectedPaperSize] = useState('58mm');
+  const [thermalPrintInvoice, setThermalPrintInvoice] = useState<any>(null);
 
   // Service master list with different pricing tiers
   const serviceMasterList = [

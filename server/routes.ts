@@ -348,19 +348,31 @@ async function sendEmailReport(consolidatedReport: any, emailAddress: string) {
   console.log(`Email report sent to ${emailAddress}:`, { subject, htmlContent });
 }
 
-function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch: any, tenant: any): string {
-  const centerText = (text: string, width = 32) => {
+function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch: any, tenant: any, paperSize: string = '58mm'): string {
+  // Paper size configurations for different thermal printer widths
+  const paperConfigs = {
+    '58mm': { width: 32, fontSize: 'normal' },
+    '80mm': { width: 48, fontSize: 'normal' },
+    '110mm': { width: 64, fontSize: 'normal' },
+    '57mm': { width: 32, fontSize: 'small' },
+    '76mm': { width: 42, fontSize: 'normal' }
+  };
+  
+  const config = paperConfigs[paperSize as keyof typeof paperConfigs] || paperConfigs['58mm'];
+  const width = config.width;
+  
+  const centerText = (text: string) => {
     const padding = Math.max(0, (width - text.length) / 2);
     return ' '.repeat(Math.floor(padding)) + text;
   };
 
-  const formatLine = (left: string, right: string, width = 32) => {
+  const formatLine = (left: string, right: string) => {
     const rightPadding = Math.max(0, width - left.length - right.length);
     return left + ' '.repeat(rightPadding) + right;
   };
 
-  const separator = '='.repeat(32);
-  const dashes = '-'.repeat(32);
+  const separator = '='.repeat(width);
+  const dashes = '-'.repeat(width);
 
   let receipt = '';
   
@@ -405,8 +417,8 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
     
     // Test name (handle undefined/null names)
     const testName = test.testName || test.name || `Test ${index + 1}`;
-    if (testName.length > 32) {
-      receipt += testName.substring(0, 29) + '...\n';
+    if (testName.length > width) {
+      receipt += testName.substring(0, width - 3) + '...\n';
     } else {
       receipt += testName + '\n';
     }
@@ -1060,6 +1072,8 @@ export function registerRoutes(app: Express): Server {
       }
 
       const invoiceId = parseInt(req.params.id);
+      const paperSize = req.query.paperSize as string || '58mm'; // Default to 58mm
+      
       const invoice = await storage.getInvoice(invoiceId);
       
       if (!invoice) {
@@ -1077,11 +1091,11 @@ export function registerRoutes(app: Express): Server {
       // Get test details from invoice
       const tests = Array.isArray(invoice.tests) ? invoice.tests : [];
       
-      // Generate thermal receipt text
-      const receiptText = generateThermalReceipt(invoice, patient, tests, branch, tenant);
+      // Generate thermal receipt text with specified paper size
+      const receiptText = generateThermalReceipt(invoice, patient, tests, branch, tenant, paperSize);
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="thermal-receipt-${invoice.invoiceNumber}.txt"`);
+      res.setHeader('Content-Disposition', `attachment; filename="thermal-receipt-${paperSize}-${invoice.invoiceNumber}.txt"`);
       res.send(receiptText);
 
     } catch (error) {
