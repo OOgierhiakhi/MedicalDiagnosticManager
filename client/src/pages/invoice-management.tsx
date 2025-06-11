@@ -80,6 +80,7 @@ export default function InvoiceManagement() {
   const [newReferralName, setNewReferralName] = useState("");
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<Invoice | null>(null);
+  const [invoiceSearchTerm, setInvoiceSearchTerm] = useState("");
 
   // Query for patients
   const { data: patients } = useQuery({
@@ -334,6 +335,18 @@ export default function InvoiceManagement() {
     test.code.toLowerCase().includes(testSearchTerm.toLowerCase())
   );
 
+  // Filter invoices based on search term and status
+  const filteredInvoices = (invoices as Invoice[] || []).filter((invoice) => {
+    const matchesSearch = invoice.invoiceNumber?.toLowerCase().includes(invoiceSearchTerm.toLowerCase()) ||
+                         invoice.patientName?.toLowerCase().includes(invoiceSearchTerm.toLowerCase());
+    
+    const matchesStatus = invoiceFilter === "all" || 
+                         (invoiceFilter === "paid" && invoice.paymentStatus === "paid") ||
+                         (invoiceFilter === "unpaid" && invoice.paymentStatus === "unpaid");
+    
+    return matchesSearch && matchesStatus;
+  });
+
   const amounts = calculateInvoiceAmounts();
 
   return (
@@ -551,6 +564,19 @@ export default function InvoiceManagement() {
         </Dialog>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search invoices by number or patient name..."
+            value={invoiceSearchTerm}
+            onChange={(e) => setInvoiceSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
       {/* Invoice Tabs */}
       <Tabs value={invoiceFilter} onValueChange={(value) => setInvoiceFilter(value as any)}>
         <TabsList>
@@ -561,7 +587,15 @@ export default function InvoiceManagement() {
 
         <TabsContent value={invoiceFilter} className="mt-6">
           <div className="grid gap-4">
-            {(invoices as Invoice[] || []).map((invoice) => (
+            {filteredInvoices.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-muted-foreground">
+                  {invoiceSearchTerm ? "No invoices found matching your search" : "No invoices found"}
+                </p>
+              </div>
+            ) : (
+              filteredInvoices.map((invoice) => (
               <Card key={invoice.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
@@ -690,7 +724,8 @@ export default function InvoiceManagement() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>
