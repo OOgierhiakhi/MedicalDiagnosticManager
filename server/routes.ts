@@ -1075,16 +1075,20 @@ export function registerRoutes(app: Express): Server {
   // Generate thermal receipt (text format for POS printers)
   app.get("/api/invoices/:id/thermal-receipt", async (req, res) => {
     try {
+      console.log(`Thermal receipt request started for invoice ${req.params.id}`);
+      
       if (!req.isAuthenticated()) {
+        console.log('Authentication failed for thermal receipt request');
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const invoiceId = parseInt(req.params.id);
       const paperSize = req.query.paperSize as string || '58mm'; // Default to 58mm
       
-      console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}`);
+      console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}, user: ${req.user?.username}`);
       
       if (isNaN(invoiceId)) {
+        console.log(`Invalid invoice ID provided: ${req.params.id}`);
         return res.status(400).json({ message: "Invalid invoice ID" });
       }
       
