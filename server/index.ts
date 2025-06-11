@@ -11,6 +11,15 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Debug thermal receipt requests specifically
+  if (path.includes('thermal-receipt')) {
+    console.log(`=== MIDDLEWARE: Thermal receipt request detected ===`);
+    console.log(`Path: ${path}`);
+    console.log(`Method: ${req.method}`);
+    console.log(`Query: ${JSON.stringify(req.query)}`);
+    console.log(`Headers: ${JSON.stringify(req.headers)}`);
+  }
+
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
