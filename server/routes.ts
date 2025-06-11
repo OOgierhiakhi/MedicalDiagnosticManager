@@ -1074,13 +1074,19 @@ export function registerRoutes(app: Express): Server {
 
   // Generate thermal receipt (text format for POS printers)
   app.get("/api/invoices/:id/thermal-receipt", async (req, res) => {
+    console.log(`=== THERMAL RECEIPT REQUEST START ===`);
+    console.log(`Invoice ID param: ${req.params.id}`);
+    console.log(`Paper size: ${req.query.paperSize}`);
+    console.log(`Session ID: ${req.sessionID}`);
+    console.log(`Headers:`, req.headers.cookie ? 'Cookie present' : 'No cookie');
+    
     try {
-      console.log(`Thermal receipt request started for invoice ${req.params.id}`);
-      console.log(`Authentication status: ${req.isAuthenticated()}`);
-      console.log(`User object:`, req.user);
+      const authStatus = req.isAuthenticated();
+      console.log(`Authentication status: ${authStatus}`);
+      console.log(`User object exists: ${!!req.user}`);
       
-      if (!req.isAuthenticated()) {
-        console.log('Authentication failed for thermal receipt request');
+      if (!authStatus) {
+        console.log('=== AUTHENTICATION FAILED ===');
         return res.status(401).json({ message: "Unauthorized" });
       }
 
