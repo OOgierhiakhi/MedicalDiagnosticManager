@@ -737,13 +737,15 @@ export class DatabaseStorage implements IStorage {
           i.invoice_number as "invoiceNumber",
           i.patient_id as "patientId",
           CONCAT(p.first_name, ' ', p.last_name) as "patientName",
-          i.total_amount as "totalAmount",
+          CAST(i.total_amount AS DECIMAL) as "totalAmount",
           i.payment_status as "paymentStatus",
           i.payment_method as "paymentMethod",
           i.created_at as "createdAt",
           i.paid_at as "paidAt",
           u.username as "createdByName",
-          i.tests
+          i.tests,
+          i.subtotal,
+          i.discount_amount as "discountAmount"
         FROM invoices i
         LEFT JOIN patients p ON i.patient_id = p.id
         LEFT JOIN users u ON i.created_by = u.id
