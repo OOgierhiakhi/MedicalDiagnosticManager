@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Search, Edit, Eye, Calendar, Phone, Mail, MapPin, FileText, Plus, Minus, Receipt, CreditCard, Banknote } from "lucide-react";
+import { UserPlus, Search, Edit, Eye, Calendar, Phone, Mail, MapPin, FileText, Plus, Minus, Receipt, CreditCard, Banknote, Printer } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -364,10 +365,13 @@ export default function PatientBilling() {
         receivingBankAccountId: paymentData.receivingBankAccountId
       });
     },
-    onSuccess: (data) => {
+    onSuccess: async (response) => {
+      // Extract receipt data from API response
+      const responseData = await response.json();
+      
       // Show interactive payment success dialog instead of passive toast
       setPaymentSuccessData({
-        receiptNumber: data.receiptNumber || `RCP-${Date.now()}`,
+        receiptNumber: responseData.receiptNumber || `RCP-${Date.now()}`,
         invoiceNumber: selectedInvoice?.invoiceNumber || currentInvoice?.invoiceNumber,
         amount: selectedInvoice?.totalAmount || currentInvoice?.totalAmount || "0",
         paymentMethod: paymentMethod,
@@ -1121,6 +1125,76 @@ export default function PatientBilling() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Payment Success Dialog */}
+      <AlertDialog open={showPaymentSuccessDialog} onOpenChange={setShowPaymentSuccessDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Payment Processed Successfully</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-2">
+                <p>Payment has been successfully processed and recorded.</p>
+                <div className="bg-green-50 p-3 rounded border">
+                  <div className="space-y-1 text-sm">
+                    <div><strong>Receipt Number:</strong> {paymentSuccessData?.receiptNumber}</div>
+                    <div><strong>Invoice:</strong> {paymentSuccessData?.invoiceNumber}</div>
+                    <div><strong>Amount:</strong> ₦{parseFloat(paymentSuccessData?.amount || "0").toLocaleString()}</div>
+                    <div><strong>Payment Method:</strong> {paymentSuccessData?.paymentMethod?.toUpperCase()}</div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Would you like to print the receipt? Multiple copies will be generated:
+                  Patient Copy, Cashier Copy, and Service Department Copy.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowPaymentSuccessDialog(false);
+              setPaymentSuccessData(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                try {
+                  if (paymentSuccessData?.invoiceId) {
+                    const response = await fetch(`/api/invoices/${paymentSuccessData.invoiceId}/receipt`);
+                    if (response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `receipt-${paymentSuccessData.receiptNumber}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      
+                      toast({
+                        title: "Receipt Printed",
+                        description: "Receipt with multiple copies has been generated and downloaded.",
+                      });
+                    }
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Print Failed",
+                    description: "Could not generate receipt for printing.",
+                    variant: "destructive",
+                  });
+                }
+                setShowPaymentSuccessDialog(false);
+                setPaymentSuccessData(null);
+              }}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Print Receipt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
