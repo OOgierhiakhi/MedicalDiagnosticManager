@@ -1088,8 +1088,18 @@ export function registerRoutes(app: Express): Server {
       const branch = await storage.getBranch(invoice.branchId);
       const tenant = await storage.getTenant(invoice.tenantId);
 
-      // Get test details from invoice
-      const tests = Array.isArray(invoice.tests) ? invoice.tests : [];
+      // Get test details from invoice - properly parse JSON string
+      let tests = [];
+      if (typeof invoice.tests === 'string') {
+        try {
+          tests = JSON.parse(invoice.tests);
+        } catch (e) {
+          console.error('Error parsing invoice tests JSON:', e);
+          tests = [];
+        }
+      } else if (Array.isArray(invoice.tests)) {
+        tests = invoice.tests;
+      }
       
       // Generate thermal receipt text with specified paper size
       const receiptText = generateThermalReceipt(invoice, patient, tests, branch, tenant, paperSize);
@@ -1288,6 +1298,30 @@ export function registerRoutes(app: Express): Server {
       res.json(updatedProvider);
     } catch (error) {
       console.error("Error updating referral provider:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get invoices with filtering
+  app.get("/api/invoices", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = req.user as any;
+      const { branchId, status } = req.query;
+      
+      const effectiveBranchId = branchId ? parseInt(branchId as string) : user.branchId;
+      
+      if (!effectiveBranchId) {
+        return res.status(400).json({ message: "Branch ID is required" });
+      }
+
+      const invoices = await storage.getInvoicesByBranch(effectiveBranchId, status as string);
+      res.json(invoices);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
