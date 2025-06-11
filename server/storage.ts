@@ -737,7 +737,7 @@ export class DatabaseStorage implements IStorage {
           i.invoice_number as "invoiceNumber",
           i.patient_id as "patientId",
           CONCAT(p.first_name, ' ', p.last_name) as "patientName",
-          CAST(i.total_amount AS NUMERIC) as "totalAmount",
+          CAST(i.total_amount AS NUMERIC)::text as "totalAmount",
           i.payment_status as "paymentStatus",
           i.payment_method as "paymentMethod",
           i.created_at as "createdAt",

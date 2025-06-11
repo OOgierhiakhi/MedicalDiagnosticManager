@@ -670,7 +670,12 @@ export default function InvoiceManagement() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-medium">
-                        ₦{(parseFloat(invoice.totalAmount || '0') || 0).toLocaleString()}
+                        ₦{(() => {
+                          const amount = invoice.totalAmount;
+                          console.log('Invoice amount:', amount, 'Type:', typeof amount, 'For invoice:', invoice.invoiceNumber);
+                          const numAmount = parseFloat(amount?.toString() || '0');
+                          return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
+                        })()}
                       </div>
                       <div className="flex gap-2 mt-2">
                         {invoice.paymentStatus === 'unpaid' && (
@@ -773,8 +778,10 @@ export default function InvoiceManagement() {
                   <span>Amount Due:</span>
                   <span className="font-medium">₦{(() => {
                     console.log('Selected invoice data:', selectedInvoice);
-                    const amount = selectedInvoice.totalAmount || selectedInvoice.netAmount || selectedInvoice.total || '0';
-                    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+                    const amount = selectedInvoice.totalAmount || '0';
+                    console.log('Amount value:', amount, 'Type:', typeof amount);
+                    const numAmount = parseFloat(amount.toString());
+                    console.log('Parsed amount:', numAmount);
                     return isNaN(numAmount) ? '0' : numAmount.toLocaleString();
                   })()}</span>
                 </div>
