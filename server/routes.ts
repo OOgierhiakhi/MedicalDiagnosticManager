@@ -417,9 +417,15 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
                   (test.price || test.total || 0);
     total += price;
     
-    // Enhanced test name extraction - try multiple properties
+    // Enhanced test name extraction - try multiple properties with comprehensive fallbacks
     const testName = test.testName || test.name || test.test_name || test.service || test.description || 
-                     test.serviceName || test.service_name || `Service ${index + 1}`;
+                     test.serviceName || test.service_name || test.testType || test.category || 
+                     `Test ${index + 1}`;
+    
+    // Debug logging for missing test names
+    if (!test.testName && !test.name && !test.description) {
+      console.log('Missing test name data:', test);
+    }
     
     // Format service name
     const formattedName = testName.length > width ? testName.substring(0, width - 3) + '...' : testName;
@@ -1090,7 +1096,7 @@ export function registerRoutes(app: Express): Server {
       const branch = await storage.getBranch(invoice.branchId);
       const tenant = await storage.getTenant(invoice.tenantId);
 
-      // Get test details from invoice - properly parse JSON string
+      // Get test details from invoice - properly parse JSON string and enrich with test names
       let tests = [];
       if (typeof invoice.tests === 'string') {
         try {
@@ -1103,8 +1109,29 @@ export function registerRoutes(app: Express): Server {
         tests = invoice.tests;
       }
       
+      // Enrich test data with proper test names from database if testId is available
+      const enrichedTests = [];
+      for (const test of tests) {
+        let enrichedTest = { ...test };
+        
+        // If we have a testId but missing name, fetch from database
+        if (test.testId && !test.name && !test.testName) {
+          try {
+            const testDetails = await storage.getTest(test.testId);
+            if (testDetails) {
+              enrichedTest.name = testDetails.name;
+              enrichedTest.testName = testDetails.name;
+            }
+          } catch (error) {
+            console.error('Error fetching test details:', error);
+          }
+        }
+        
+        enrichedTests.push(enrichedTest);
+      }
+      
       // Generate thermal receipt text with specified paper size
-      const receiptText = generateThermalReceipt(invoice, patient, tests, branch, tenant, paperSize);
+      const receiptText = generateThermalReceipt(invoice, patient, enrichedTests, branch, tenant, paperSize);
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="thermal-receipt-${paperSize}-${invoice.invoiceNumber}.txt"`);
