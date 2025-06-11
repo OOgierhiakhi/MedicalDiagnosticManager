@@ -1,0 +1,46 @@
+         ORIENT MEDICAL
+       DIAGNOSTIC CENTER
+         Central Branch
+123 Medical Drive, Lagos, Nigeria
+       +234-800-ORIENT-1
+================================
+         ** INVOICE **
+         *** UNPAID ***
+================================
+Receipt #:       INV-2025-449854
+Date:                 11/06/2025
+Time:                   17:37:29
+--------------------------------
+PATIENT INFORMATION:
+Name:                  ilube joy
+ID:                   P-2025-131
+Phone:             2347085555555
+--------------------------------
+SERVICES:
+Breast Ultrasound
+  Qty: 1                 ₦20,000
+--------------------------------
+Subtotal:                ₦20,000
+TOTAL:                   ₦20,000
+================================
+INVOICE STATUS:
+Status:           *** UNPAID ***
+Amount Due:              ₦20,000
+Due Date:              IMMEDIATE
+--------------------------------
+      PLEASE PRESENT THIS
+      INVOICE FOR PAYMENT
+--------------------------------
+     Thank you for choosing
+        Orient Medical!
+
+      For results inquiry:
+       +234-800-ORIENT-1
+
+        Visit us online:
+      www.orientmedical.ng
+
+================================
+
+
+

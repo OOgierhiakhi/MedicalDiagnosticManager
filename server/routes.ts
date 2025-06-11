@@ -1072,11 +1072,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Test endpoint to verify routing
-  app.get("/api/test-route", (req, res) => {
-    console.log("TEST ROUTE HIT - routing is working");
-    res.json({ message: "Test route working", timestamp: new Date().toISOString() });
-  });
+
 
   // Generate thermal receipt (text format for POS printers) - FIXED ROUTE
   app.get("/api/thermal-receipt/:invoiceId", async (req, res) => {
