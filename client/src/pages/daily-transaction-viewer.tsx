@@ -152,10 +152,10 @@ export default function DailyTransactionViewer() {
   };
 
   // Calculate summary statistics
-  const totalRevenue = transactions.reduce((sum: number, t: any) => sum + t.amount, 0);
-  const cashRevenue = transactions.filter((t: any) => t.paymentMethod === 'cash').reduce((sum: number, t: any) => sum + t.amount, 0);
-  const posRevenue = transactions.filter((t: any) => t.paymentMethod === 'pos').reduce((sum: number, t: any) => sum + t.amount, 0);
-  const transferRevenue = transactions.filter((t: any) => t.paymentMethod === 'transfer').reduce((sum: number, t: any) => sum + t.amount, 0);
+  const totalRevenue = transactions.reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+  const cashRevenue = transactions.filter((t: any) => t.paymentMethod === 'cash').reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+  const posRevenue = transactions.filter((t: any) => t.paymentMethod === 'pos').reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
+  const transferRevenue = transactions.filter((t: any) => t.paymentMethod === 'transfer').reduce((sum: number, t: any) => sum + parseFloat(t.amount || 0), 0);
 
   const getRoleSpecificActions = () => {
     const role = user?.role;
