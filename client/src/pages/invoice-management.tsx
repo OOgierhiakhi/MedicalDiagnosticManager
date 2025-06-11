@@ -670,7 +670,7 @@ export default function InvoiceManagement() {
                     </div>
                     <div className="text-right">
                       <div className="text-lg font-medium">
-                        ₦{parseFloat(invoice.totalAmount).toLocaleString()}
+                        ₦{(parseFloat(invoice.totalAmount || '0') || 0).toLocaleString()}
                       </div>
                       <div className="flex gap-2 mt-2">
                         {invoice.paymentStatus === 'unpaid' && (

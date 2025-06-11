@@ -415,8 +415,8 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
     const price = typeof test.price === 'string' ? parseFloat(test.price) : (test.price || 0);
     total += price;
     
-    // Test name (handle undefined/null names)
-    const testName = test.testName || test.name || `Test ${index + 1}`;
+    // Enhanced test name extraction - try multiple properties
+    const testName = test.testName || test.name || test.test_name || test.service || test.description || `Service ${index + 1}`;
     if (testName.length > width) {
       receipt += testName.substring(0, width - 3) + '...\n';
     } else {
