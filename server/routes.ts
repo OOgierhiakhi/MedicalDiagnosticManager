@@ -1076,6 +1076,8 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/invoices/:id/thermal-receipt", async (req, res) => {
     try {
       console.log(`Thermal receipt request started for invoice ${req.params.id}`);
+      console.log(`Authentication status: ${req.isAuthenticated()}`);
+      console.log(`User object:`, req.user);
       
       if (!req.isAuthenticated()) {
         console.log('Authentication failed for thermal receipt request');
