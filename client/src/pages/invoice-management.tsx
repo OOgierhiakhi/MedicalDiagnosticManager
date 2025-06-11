@@ -83,6 +83,9 @@ export default function InvoiceManagement() {
   const [invoiceSearchTerm, setInvoiceSearchTerm] = useState("");
   const [showPaymentSuccessDialog, setShowPaymentSuccessDialog] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
+  const [showThermalPrintDialog, setShowThermalPrintDialog] = useState(false);
+  const [selectedPaperSize, setSelectedPaperSize] = useState('58mm');
+  const [thermalPrintInvoice, setThermalPrintInvoice] = useState<Invoice | null>(null);
 
   // Query for patients
   const { data: patients } = useQuery({
@@ -332,6 +335,42 @@ export default function InvoiceManagement() {
       invoiceId: selectedInvoice.id,
       paymentData,
     });
+  };
+
+  // Handle thermal printing with paper size selection
+  const handleThermalPrint = (invoice: Invoice) => {
+    setThermalPrintInvoice(invoice);
+    setShowThermalPrintDialog(true);
+  };
+
+  const downloadThermalReceipt = async (paperSize: string) => {
+    if (!thermalPrintInvoice) return;
+    
+    try {
+      const response = await fetch(`/api/invoices/${thermalPrintInvoice.id}/thermal-receipt?paperSize=${paperSize}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `thermal-${paperSize}-receipt-${thermalPrintInvoice.invoiceNumber}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast({
+          title: "Thermal Receipt Downloaded",
+          description: `${paperSize} POS receipt ready for thermal printer`,
+        });
+        setShowThermalPrintDialog(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Could not generate thermal receipt",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredPatients = (patients as Patient[] || []).filter(patient =>

@@ -435,6 +435,42 @@ export default function PatientBilling() {
     createInvoiceMutation.mutate(billData);
   };
 
+  // Handle thermal printing with paper size selection
+  const handleThermalPrint = (invoice: any) => {
+    setThermalPrintInvoice(invoice);
+    setShowThermalPrintDialog(true);
+  };
+
+  const downloadThermalReceipt = async (paperSize: string) => {
+    if (!thermalPrintInvoice) return;
+    
+    try {
+      const response = await fetch(`/api/invoices/${thermalPrintInvoice.id}/thermal-receipt?paperSize=${paperSize}`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `thermal-${paperSize}-receipt-${thermalPrintInvoice.invoiceNumber}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast({
+          title: "Thermal Receipt Downloaded",
+          description: `${paperSize} POS receipt ready for thermal printer`,
+        });
+        setShowThermalPrintDialog(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Could not generate thermal receipt",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Handle payment for current invoice
   const handlePayCurrentInvoice = async () => {
     const invoiceToUse = currentInvoice || selectedInvoice;
@@ -724,32 +760,7 @@ export default function PatientBilling() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={async () => {
-                            try {
-                              const response = await fetch(`/api/invoices/${selectedInvoice.id}/thermal-receipt`);
-                              if (response.ok) {
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = `thermal-invoice-${selectedInvoice.invoiceNumber}.txt`;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-                                toast({
-                                  title: "POS Invoice Ready",
-                                  description: "Thermal receipt downloaded for POS printer",
-                                });
-                              }
-                            } catch (error) {
-                              toast({
-                                title: "Print Failed",
-                                description: "Could not generate thermal receipt",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
+                          onClick={() => handleThermalPrint(selectedInvoice)}
                         >
                           <Printer className="h-4 w-4 mr-1" />
                           POS Print
@@ -1239,6 +1250,84 @@ export default function PatientBilling() {
             >
               <Printer className="w-4 h-4 mr-2" />
               Print Receipt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Thermal Printer Paper Size Selection Dialog */}
+      <AlertDialog open={showThermalPrintDialog} onOpenChange={setShowThermalPrintDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Printer className="w-5 h-5" />
+              POS Thermal Printer Settings
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Select your thermal printer paper size for optimal receipt formatting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div>
+              <Label>Paper Size</Label>
+              <Select value={selectedPaperSize} onValueChange={setSelectedPaperSize}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="58mm">
+                    <div className="flex flex-col">
+                      <span className="font-medium">58mm (2.3")</span>
+                      <span className="text-xs text-muted-foreground">Standard POS receipt - 32 characters wide</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="57mm">
+                    <div className="flex flex-col">
+                      <span className="font-medium">57mm (2.25")</span>
+                      <span className="text-xs text-muted-foreground">Compact format - 32 characters wide</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="76mm">
+                    <div className="flex flex-col">
+                      <span className="font-medium">76mm (3")</span>
+                      <span className="text-xs text-muted-foreground">Medium format - 42 characters wide</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="80mm">
+                    <div className="flex flex-col">
+                      <span className="font-medium">80mm (3.15")</span>
+                      <span className="text-xs text-muted-foreground">Wide format - 48 characters wide</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="110mm">
+                    <div className="flex flex-col">
+                      <span className="font-medium">110mm (4.3")</span>
+                      <span className="text-xs text-muted-foreground">Extra wide format - 64 characters wide</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {thermalPrintInvoice && (
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm font-medium">Invoice: {thermalPrintInvoice.invoiceNumber}</p>
+                <p className="text-sm text-muted-foreground">
+                  Amount: ₦{parseFloat(thermalPrintInvoice.totalAmount || '0').toLocaleString()}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => downloadThermalReceipt(selectedPaperSize)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Download {selectedPaperSize} Receipt
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
