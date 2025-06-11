@@ -4145,6 +4145,69 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create invoice without payment (two-step workflow)
+  app.post("/api/create-invoice", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const billData = req.body;
+      
+      // Generate invoice number
+      const invoiceNumber = `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+
+      // Create invoice in pending payment status
+      const invoice = await storage.createInvoice({
+        invoiceNumber,
+        patientId: billData.patientId,
+        tenantId: billData.tenantId,
+        branchId: billData.branchId,
+        tests: billData.services.map((service: any) => ({
+          testId: service.id,
+          testName: service.name,
+          price: service.unitPrice,
+          quantity: service.quantity,
+          total: service.total
+        })),
+        subtotal: billData.subtotal.toString(),
+        discountPercentage: "0",
+        discountAmount: "0",
+        commissionAmount: "0",
+        totalAmount: billData.totalAmount.toString(),
+        netAmount: billData.totalAmount.toString(),
+        paymentStatus: "unpaid",
+        createdBy: req.user.id,
+      });
+
+      // Create patient tests for each service
+      for (const service of billData.services) {
+        await storage.createPatientTest({
+          patientId: billData.patientId,
+          testId: service.id,
+          status: "scheduled",
+          scheduledAt: new Date(),
+          tenantId: billData.tenantId,
+          branchId: billData.branchId,
+          technicianId: req.user.id
+        });
+      }
+
+      console.log(`Invoice created: ${invoiceNumber} - ₦${billData.totalAmount} - PENDING PAYMENT`);
+      console.log(`Staff: ${req.user.username} (Billing)`);
+
+      res.json({ 
+        success: true, 
+        invoice,
+        invoiceNumber,
+        totalAmount: billData.totalAmount
+      });
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      res.status(500).json({ error: "Failed to create invoice" });
+    }
+  });
+
   // Badge system API routes
   app.get("/api/badge-definitions", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

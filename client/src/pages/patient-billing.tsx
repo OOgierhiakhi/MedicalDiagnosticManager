@@ -1069,21 +1069,46 @@ export default function PatientBilling() {
                 </div>
               </div>
 
+              {/* Receipt Copies */}
+              <div className="border-t pt-4">
+                <p className="font-semibold mb-2">Receipt Copies:</p>
+                <div className="grid grid-cols-1 gap-2 text-sm">
+                  <div className="flex justify-between p-2 bg-gray-50 rounded">
+                    <span>Patient Copy</span>
+                    <Badge variant="outline">Original</Badge>
+                  </div>
+                  <div className="flex justify-between p-2 bg-gray-50 rounded">
+                    <span>Cashier Copy</span>
+                    <Badge variant="outline">Duplicate</Badge>
+                  </div>
+                  {receiptData.services?.map((service: any, index: number) => (
+                    <div key={index} className="flex justify-between p-2 bg-gray-50 rounded">
+                      <span>{service.category} Department Copy</span>
+                      <Badge variant="outline">Service Copy</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Print Actions */}
               <div className="flex gap-2 pt-4 border-t">
                 <Button 
-                  onClick={() => window.print()} 
+                  onClick={() => {
+                    if (confirm("Print all receipt copies? This will print the patient copy, cashier copy, and service department copies.")) {
+                      window.print();
+                    }
+                  }} 
                   className="flex-1"
                 >
                   <Receipt className="w-4 h-4 mr-2" />
-                  Print Receipt
+                  Print All Copies
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setShowReceiptDialog(false)}
                   className="flex-1"
                 >
-                  Close
+                  Cancel
                 </Button>
               </div>
             </div>
