@@ -1082,6 +1082,8 @@ export function registerRoutes(app: Express): Server {
       const invoiceId = parseInt(req.params.id);
       const paperSize = req.query.paperSize as string || '58mm'; // Default to 58mm
       
+      console.log(`Thermal receipt request for invoice ${invoiceId}, paper size: ${paperSize}`);
+      
       const invoice = await storage.getInvoice(invoiceId);
       
       if (!invoice) {
@@ -1139,7 +1141,7 @@ export function registerRoutes(app: Express): Server {
 
     } catch (error) {
       console.error("Error generating thermal receipt:", error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", error: error.message });
     }
   });
 
