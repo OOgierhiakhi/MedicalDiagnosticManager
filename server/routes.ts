@@ -4093,27 +4093,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get invoices by branch with optional status filter
-  app.get("/api/invoices", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
 
-      const branchId = req.query.branchId as string;
-      const status = req.query.status as string;
-      
-      if (!branchId) {
-        return res.status(400).json({ error: "Branch ID is required" });
-      }
-
-      const invoices = await storage.getInvoicesByBranch(parseInt(branchId), status);
-      res.json(invoices);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-      res.status(500).json({ error: "Failed to fetch invoices" });
-    }
-  });
 
   // Get organization bank accounts
   app.get("/api/organization-bank-accounts", async (req, res) => {
