@@ -524,7 +524,7 @@ export default function InvoiceManagement() {
                       <div key={test.testId} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <span>{test.name}</span>
                         <div className="flex items-center gap-2">
-                          <span>₦{test.price.toLocaleString()}</span>
+                          <span>{formatCurrency(test.price)}</span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1016,7 +1016,7 @@ export default function InvoiceManagement() {
                   <div className="space-y-1 text-sm">
                     <div><strong>Receipt Number:</strong> {paymentSuccessData?.receiptNumber}</div>
                     <div><strong>Invoice:</strong> {paymentSuccessData?.invoiceNumber}</div>
-                    <div><strong>Amount:</strong> ₦{parseFloat(paymentSuccessData?.amount || "0").toLocaleString()}</div>
+                    <div><strong>Amount:</strong> {formatCurrency(paymentSuccessData?.amount || "0")}</div>
                     <div><strong>Payment Method:</strong> {paymentSuccessData?.paymentMethod?.toUpperCase()}</div>
                   </div>
                 </div>
@@ -1133,7 +1133,7 @@ export default function InvoiceManagement() {
               <div className="bg-muted p-3 rounded-lg">
                 <p className="text-sm font-medium">Invoice: {thermalPrintInvoice.invoiceNumber}</p>
                 <p className="text-sm text-muted-foreground">
-                  Amount: ₦{parseFloat(thermalPrintInvoice.totalAmount || '0').toLocaleString()}
+                  Amount: {formatCurrency(thermalPrintInvoice.totalAmount || '0')}
                 </p>
               </div>
             )}
