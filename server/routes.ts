@@ -371,7 +371,14 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
   receipt += centerText(branch?.address || '') + '\n';
   receipt += centerText(branch?.phone || '') + '\n';
   receipt += separator + '\n';
-  receipt += centerText('PAYMENT RECEIPT') + '\n';
+  
+  // Document type based on payment status
+  if (invoice.paymentStatus === 'unpaid') {
+    receipt += centerText('** INVOICE **') + '\n';
+    receipt += centerText('*** UNPAID ***') + '\n';
+  } else {
+    receipt += centerText('PAYMENT RECEIPT') + '\n';
+  }
   receipt += separator + '\n';
   
   // Invoice details
@@ -397,7 +404,7 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
     total += price;
     
     // Test name (handle undefined/null names)
-    const testName = test.name || `Test ${index + 1}`;
+    const testName = test.testName || test.name || `Test ${index + 1}`;
     if (testName.length > 32) {
       receipt += testName.substring(0, 29) + '...\n';
     } else {
@@ -421,10 +428,20 @@ function generateThermalReceipt(invoice: any, patient: any, tests: any[], branch
   receipt += separator + '\n';
   
   // Payment details
-  receipt += 'PAYMENT DETAILS:\n';
-  receipt += formatLine('Method:', invoice.paymentMethod?.toUpperCase() || 'CASH') + '\n';
-  receipt += formatLine('Amount Paid:', `₦${totalAmount.toLocaleString()}`) + '\n';
-  receipt += formatLine('Status:', 'PAID') + '\n';
+  if (invoice.paymentStatus === 'unpaid') {
+    receipt += 'INVOICE STATUS:\n';
+    receipt += formatLine('Status:', '*** UNPAID ***') + '\n';
+    receipt += formatLine('Amount Due:', `₦${totalAmount.toLocaleString()}`) + '\n';
+    receipt += formatLine('Due Date:', 'IMMEDIATE') + '\n';
+    receipt += dashes + '\n';
+    receipt += centerText('PLEASE PRESENT THIS') + '\n';
+    receipt += centerText('INVOICE FOR PAYMENT') + '\n';
+  } else {
+    receipt += 'PAYMENT DETAILS:\n';
+    receipt += formatLine('Method:', invoice.paymentMethod?.toUpperCase() || 'CASH') + '\n';
+    receipt += formatLine('Amount Paid:', `₦${totalAmount.toLocaleString()}`) + '\n';
+    receipt += formatLine('Status:', 'PAID') + '\n';
+  }
   receipt += dashes + '\n';
   
   // Footer

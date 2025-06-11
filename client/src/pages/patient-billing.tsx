@@ -721,10 +721,35 @@ export default function PatientBilling() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/api/invoices/${selectedInvoice.id}/receipt?status=unpaid`, '_blank')}
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/invoices/${selectedInvoice.id}/thermal-receipt`);
+                              if (response.ok) {
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `thermal-invoice-${selectedInvoice.invoiceNumber}.txt`;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                toast({
+                                  title: "POS Invoice Ready",
+                                  description: "Thermal receipt downloaded for POS printer",
+                                });
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Print Failed",
+                                description: "Could not generate thermal receipt",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
                         >
                           <Printer className="h-4 w-4 mr-1" />
-                          Print Invoice
+                          POS Print
                         </Button>
                         <Badge variant="destructive">Unpaid</Badge>
                       </div>

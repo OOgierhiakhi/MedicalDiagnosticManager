@@ -61,8 +61,34 @@ Comprehensive simulation testing of billing and payment workflows to identify is
 - Frontend display mapping issue causing generic "Service" label
 - Price calculation correct: ₦20,000
 
+### PHASE 4: Critical Issues Resolution
+**Status:** ✅ COMPLETED
+**Fixes Applied:**
+
+1. **Service Name Display Fixed:**
+   - Updated property mapping from `test.description || test.name` to `test.testName || test.name || test.description`
+   - Applied fix to both invoice details and unpaid invoices list
+   - Backend data shows correct testName: "Obstetric Ultrasound (Dating)"
+   - Frontend now displays proper service names
+
+2. **POS Thermal Printer Integration:**
+   - Added "POS Print" button for unpaid invoices
+   - Implemented thermal receipt generation optimized for POS printers
+   - Added "UNPAID" watermark functionality for unpaid invoices
+   - Thermal receipt format includes:
+     - 32-character width formatting for thermal printers
+     - "*** UNPAID ***" status indicators
+     - "PLEASE PRESENT THIS INVOICE FOR PAYMENT" instructions
+     - Proper service name display with testName property
+
+3. **Thermal Receipt Features:**
+   - Downloads as .txt file ready for thermal printer
+   - Includes all invoice details with proper formatting
+   - Differentiates between paid receipts and unpaid invoices
+   - Handles service name truncation for thermal printer width
+
 ## Next Test Phases:
-1. Fix service name display mapping
-2. Add print invoice functionality with "UNPAID" watermark
-3. Test payment processing workflow
-4. Validate receipt generation and printing
+1. Test thermal receipt download functionality
+2. Validate POS printer compatibility
+3. Continue payment processing workflow testing
+4. Verify complete billing cycle integration
