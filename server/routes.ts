@@ -1319,6 +1319,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       const invoices = await storage.getInvoicesByBranch(effectiveBranchId, status as string);
+      console.log('Raw invoice data:', JSON.stringify(invoices.slice(0, 2), null, 2));
       res.json(invoices);
     } catch (error) {
       console.error("Error fetching invoices:", error);
