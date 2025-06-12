@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { rbacStorage } from "./rbac-storage";
+import { brandingStorage } from "./branding-storage";
 import { RBACMiddleware, rbacHelpers } from "./rbac-middleware";
 import { financialStorage } from "./financial-storage";
 import { inventoryStorage } from "./inventory-storage";
@@ -1220,8 +1221,16 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Get organization branding
-      const branding = await storage.getOrganizationBranding(req.user?.tenantId || 1);
+      // Get organization branding with fallback
+      let orgName = 'Orient Medical Diagnostic Center';
+      try {
+        const branding = await brandingStorage.getOrganizationBranding(req.user?.tenantId || 1);
+        if (branding?.organizationName) {
+          orgName = branding.organizationName;
+        }
+      } catch (error) {
+        console.log('Using fallback organization name');
+      }
 
       const doc = new PDFDocument({ margin: 50 });
       const isPaid = invoice.paymentStatus === 'paid';
@@ -1245,7 +1254,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Header
-      doc.fillColor('black').fontSize(20).text(branding?.organizationName || 'Orient Medical Diagnostic Center', { align: 'center' });
+      doc.fillColor('black').fontSize(20).text(orgName, { align: 'center' });
       doc.fontSize(14).text('INVOICE', { align: 'center' });
       doc.moveDown();
 
@@ -1265,7 +1274,7 @@ export function registerRoutes(app: Express): Server {
       doc.text('Bill To:', rightX, currentY);
       doc.text(`${patient.firstName} ${patient.lastName}`, rightX, currentY + 20);
       doc.text(`Patient ID: ${patient.patientId}`, rightX, currentY + 35);
-      doc.text(`Phone: ${patient.phoneNumber}`, rightX, currentY + 50);
+      doc.text(`Phone: ${patient.phone}`, rightX, currentY + 50);
 
       doc.moveDown(3);
 
