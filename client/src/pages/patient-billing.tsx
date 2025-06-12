@@ -767,6 +767,40 @@ export default function PatientBilling() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/invoices/${selectedInvoice.id}/print`);
+                              if (response.ok) {
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `unpaid-invoice-${selectedInvoice.invoiceNumber}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                
+                                toast({
+                                  title: "Invoice Downloaded",
+                                  description: "Unpaid invoice with watermark has been generated.",
+                                });
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Print Failed",
+                                description: "Could not generate invoice for printing.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          Print Invoice
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleThermalPrint(selectedInvoice)}
                         >
                           <Printer className="h-4 w-4 mr-1" />

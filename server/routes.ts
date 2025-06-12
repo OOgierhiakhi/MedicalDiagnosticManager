@@ -1201,6 +1201,142 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Generate invoice PDF with status watermark
+  app.get("/api/invoices/:id/print", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const invoiceId = parseInt(req.params.id);
+      const invoice = await storage.getInvoice(invoiceId);
+      
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      const patient = await storage.getPatient(invoice.patientId);
+      if (!patient) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      // Get organization branding
+      const branding = await storage.getOrganizationBranding(req.user?.tenantId || 1);
+
+      const doc = new PDFDocument({ margin: 50 });
+      const isPaid = invoice.paymentStatus === 'paid';
+      const filename = isPaid ? `invoice-${invoice.invoiceNumber}.pdf` : `unpaid-invoice-${invoice.invoiceNumber}.pdf`;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+
+      // Add watermark for unpaid invoices
+      if (!isPaid) {
+        doc.save();
+        doc.rotate(45, { origin: [300, 400] });
+        doc.fontSize(60)
+           .fillColor('red', 0.3)
+           .text('UNPAID', 200, 350, {
+             align: 'center',
+             width: 200
+           });
+        doc.restore();
+      }
+
+      // Header
+      doc.fillColor('black').fontSize(20).text(branding?.organizationName || 'Orient Medical Diagnostic Center', { align: 'center' });
+      doc.fontSize(14).text('INVOICE', { align: 'center' });
+      doc.moveDown();
+
+      // Invoice details in two columns
+      const leftX = 50;
+      const rightX = 350;
+      const currentY = doc.y;
+
+      // Left column - Invoice info
+      doc.text('Invoice Details:', leftX, currentY);
+      doc.fontSize(12);
+      doc.text(`Invoice #: ${invoice.invoiceNumber}`, leftX, doc.y + 5);
+      doc.text(`Date: ${new Date(invoice.createdAt).toLocaleDateString()}`, leftX, doc.y + 5);
+      doc.text(`Status: ${(invoice.paymentStatus || 'unpaid').toUpperCase()}`, leftX, doc.y + 5);
+
+      // Right column - Patient info
+      doc.text('Bill To:', rightX, currentY);
+      doc.text(`${patient.firstName} ${patient.lastName}`, rightX, currentY + 20);
+      doc.text(`Patient ID: ${patient.patientId}`, rightX, currentY + 35);
+      doc.text(`Phone: ${patient.phoneNumber}`, rightX, currentY + 50);
+
+      doc.moveDown(3);
+
+      // Services table
+      doc.fontSize(14).text('Services & Tests:', leftX);
+      doc.moveDown(0.5);
+
+      // Table header
+      const startY = doc.y;
+      const colWidths = [250, 80, 80, 80];
+      
+      doc.fontSize(12).fillColor('black');
+      doc.rect(leftX, startY, colWidths.reduce((a, b) => a + b, 0), 20).fillAndStroke('#f0f0f0', '#ccc');
+      
+      doc.fillColor('black').text('Description', leftX + 5, startY + 5);
+      doc.text('Qty', leftX + colWidths[0] + 5, startY + 5);
+      doc.text('Unit Price', leftX + colWidths[0] + colWidths[1] + 5, startY + 5);
+      doc.text('Total', leftX + colWidths[0] + colWidths[1] + colWidths[2] + 5, startY + 5);
+
+      let currentRowY = startY + 20;
+
+      // Service items
+      if (Array.isArray(invoice.tests)) {
+        invoice.tests.forEach((test: any, index: number) => {
+          const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+          doc.rect(leftX, currentRowY, colWidths.reduce((a, b) => a + b, 0), 25).fillAndStroke(bgColor, '#ddd');
+          
+          doc.fillColor('black');
+          doc.text(test.testName || test.name || 'Service', leftX + 5, currentRowY + 5, { width: colWidths[0] - 10 });
+          doc.text('1', leftX + colWidths[0] + 5, currentRowY + 5);
+          doc.text(`₦${(test.price || 0).toLocaleString()}`, leftX + colWidths[0] + colWidths[1] + 5, currentRowY + 5);
+          doc.text(`₦${(test.price || 0).toLocaleString()}`, leftX + colWidths[0] + colWidths[1] + colWidths[2] + 5, currentRowY + 5);
+          
+          currentRowY += 25;
+        });
+      }
+
+      doc.y = currentRowY + 10;
+
+      // Totals section
+      const totalsX = leftX + colWidths[0] + colWidths[1];
+      doc.text(`Subtotal: ₦${parseFloat(invoice.subtotal || '0').toLocaleString()}`, totalsX);
+      
+      if (invoice.discountAmount && parseFloat(invoice.discountAmount) > 0) {
+        doc.text(`Discount: -₦${parseFloat(invoice.discountAmount).toLocaleString()}`, totalsX);
+      }
+      
+      doc.fontSize(14).text(`Total Amount: ₦${parseFloat(invoice.totalAmount || '0').toLocaleString()}`, totalsX);
+      doc.moveDown(2);
+
+      // Payment status and method
+      if (isPaid) {
+        doc.text(`Payment Method: ${(invoice.paymentMethod || 'CASH').toUpperCase()}`, leftX);
+        if (invoice.paidAt) {
+          doc.text(`Payment Date: ${new Date(invoice.paidAt).toLocaleDateString()}`, leftX);
+        }
+      } else {
+        doc.fillColor('red').fontSize(12).text('*** PAYMENT PENDING ***', leftX);
+        doc.fillColor('black').text('Please present this invoice for payment at the billing counter.', leftX);
+      }
+
+      doc.moveDown(2);
+      doc.fontSize(10).text('Thank you for choosing Orient Medical Diagnostic Center', { align: 'center' });
+
+      doc.end();
+    } catch (error: any) {
+      console.error('Invoice generation error:', error);
+      res.status(500).json({ message: "Error generating invoice: " + error.message });
+    }
+  });
+
   // Get patient's unpaid invoices
   app.get("/api/invoices/patient/:patientId/unpaid", async (req, res) => {
     try {
