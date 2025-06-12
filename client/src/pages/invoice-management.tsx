@@ -772,6 +772,40 @@ export default function InvoiceManagement() {
                               <Receipt className="w-4 h-4 mr-1" />
                               PDF Receipt
                             </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/invoices/${invoice.id}/print`);
+                                  if (response.ok) {
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `invoice-${invoice.invoiceNumber}.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    
+                                    toast({
+                                      title: "Invoice Printed",
+                                      description: "Paid invoice generated for printing.",
+                                    });
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    title: "Print Failed",
+                                    description: "Could not generate invoice for printing",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Print Invoice
+                            </Button>
                           </>
                         )}
                         <Button 
