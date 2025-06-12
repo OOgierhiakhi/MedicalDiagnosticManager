@@ -1185,8 +1185,17 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
-      // Get test details from invoice
-      const tests = Array.isArray(invoice.tests) ? invoice.tests : [];
+      // Get tests with actual names from database
+      const invoiceTests = Array.isArray(invoice.tests) ? invoice.tests : [];
+      const tests = await Promise.all(
+        invoiceTests.map(async (test: any) => {
+          const testDetails = await storage.getTest(test.testId);
+          return {
+            ...test,
+            testName: testDetails?.name || test.name || 'Unknown Service'
+          };
+        })
+      );
       
       // Generate PDF receipt
       const pdfBuffer = await PDFService.generatePaymentReceiptPDF(invoice, patient, tests);

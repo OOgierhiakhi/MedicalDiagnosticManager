@@ -135,7 +135,7 @@ export class PDFService {
 
         // Test items
         tests.forEach((test: any) => {
-          doc.text(test.description || test.name, 50, yPosition);
+          doc.text(test.testName || test.description || test.name || 'Unknown Service', 50, yPosition);
           doc.text('1', 250, yPosition);
           doc.text(`₦${parseFloat(test.unitPrice || test.price).toLocaleString()}`, 350, yPosition);
           doc.text(`₦${parseFloat(test.total || test.price).toLocaleString()}`, 450, yPosition);
