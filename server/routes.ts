@@ -1220,6 +1220,18 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Patient not found" });
       }
 
+      // Get tests with actual names from database
+      const invoiceTests = Array.isArray(invoice.tests) ? invoice.tests : [];
+      const tests = await Promise.all(
+        invoiceTests.map(async (test: any) => {
+          const testDetails = await storage.getTest(test.testId);
+          return {
+            ...test,
+            testName: testDetails?.name || test.name || 'Unknown Service'
+          };
+        })
+      );
+
       // Get organization branding with fallback
       let orgName = 'Orient Medical Diagnostic Center';
       try {
@@ -1238,19 +1250,6 @@ export function registerRoutes(app: Express): Server {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);
-
-      // Add watermark for unpaid invoices
-      if (!isPaid) {
-        doc.save();
-        doc.rotate(45, { origin: [300, 400] });
-        doc.fontSize(60)
-           .fillColor('red', 0.3)
-           .text('UNPAID', 200, 350, {
-             align: 'center',
-             width: 200
-           });
-        doc.restore();
-      }
 
       // Header
       doc.fillColor('black').fontSize(20).text(orgName, { align: 'center' });
@@ -1296,13 +1295,13 @@ export function registerRoutes(app: Express): Server {
       let currentRowY = startY + 20;
 
       // Service items
-      if (Array.isArray(invoice.tests)) {
-        invoice.tests.forEach((test: any, index: number) => {
+      if (Array.isArray(tests)) {
+        tests.forEach((test: any, index: number) => {
           const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
           doc.rect(leftX, currentRowY, colWidths.reduce((a, b) => a + b, 0), 25).fillAndStroke(bgColor, '#ddd');
           
           doc.fillColor('black');
-          doc.text(test.testName || test.name || 'Service', leftX + 5, currentRowY + 5, { width: colWidths[0] - 10 });
+          doc.text(test.testName || 'Service', leftX + 5, currentRowY + 5, { width: colWidths[0] - 10 });
           doc.text('1', leftX + colWidths[0] + 5, currentRowY + 5);
           doc.text(`₦${(test.price || 0).toLocaleString()}`, leftX + colWidths[0] + colWidths[1] + 5, currentRowY + 5);
           doc.text(`₦${(test.price || 0).toLocaleString()}`, leftX + colWidths[0] + colWidths[1] + colWidths[2] + 5, currentRowY + 5);
@@ -1337,6 +1336,19 @@ export function registerRoutes(app: Express): Server {
 
       doc.moveDown(2);
       doc.fontSize(10).text('Thank you for choosing Orient Medical Diagnostic Center', { align: 'center' });
+
+      // Add watermark for unpaid invoices (behind content)
+      if (!isPaid) {
+        doc.save();
+        doc.translate(300, 400);
+        doc.rotate(-45);
+        doc.fontSize(80)
+           .fillColor('red', 0.15)
+           .text('UNPAID', -80, -20, {
+             align: 'center'
+           });
+        doc.restore();
+      }
 
       doc.end();
     } catch (error: any) {
