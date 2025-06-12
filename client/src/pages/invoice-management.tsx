@@ -682,16 +682,52 @@ export default function InvoiceManagement() {
                       </div>
                       <div className="flex gap-2 mt-2">
                         {invoice.paymentStatus === 'unpaid' && (
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              setSelectedInvoice(invoice);
-                              setShowPaymentDialog(true);
-                            }}
-                          >
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            Collect Payment
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInvoice(invoice);
+                                setShowPaymentDialog(true);
+                              }}
+                            >
+                              <DollarSign className="w-4 h-4 mr-1" />
+                              Collect Payment
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`/api/invoices/${invoice.id}/print`);
+                                  if (response.ok) {
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `unpaid-invoice-${invoice.invoiceNumber}.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    document.body.removeChild(a);
+                                    
+                                    toast({
+                                      title: "Invoice Printed",
+                                      description: "Unpaid invoice with watermark generated for distribution.",
+                                    });
+                                  }
+                                } catch (error) {
+                                  toast({
+                                    title: "Print Failed",
+                                    description: "Could not generate invoice for printing",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Print Invoice
+                            </Button>
+                          </>
                         )}
                         {invoice.paymentStatus === 'paid' && (
                           <>
