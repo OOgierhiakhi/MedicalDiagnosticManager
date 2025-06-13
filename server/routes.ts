@@ -1804,25 +1804,37 @@ export function registerRoutes(app: Express): Server {
         verificationStatus: 'verified'
       });
 
-      // Create patient test records for lab management tracking
+      // Create patient test records for lab management tracking (prevent duplicates)
       const fullInvoice = await storage.getInvoice(parseInt(invoiceId));
       if (fullInvoice && fullInvoice.tests) {
         const tests = Array.isArray(fullInvoice.tests) ? fullInvoice.tests : [];
         
         for (const test of tests) {
           try {
-            await storage.createPatientTest({
-              patientId: invoice.patientId,
-              testId: test.testId,
-              status: 'pending',
-              scheduledAt: new Date(),
-              branchId: req.user!.branchId,
-              tenantId: req.user!.tenantId,
-              paymentVerified: true,
-              paymentVerifiedBy: req.user!.id,
-              paymentVerifiedAt: new Date()
-            });
-            console.log(`Created patient test record for: ${test.name || 'Test'} (ID: ${test.testId})`);
+            // Check if patient test already exists for this patient and test
+            const existingTests = await storage.getPatientTestsByPatient(invoice.patientId);
+            const testExists = existingTests.some(pt => 
+              pt.testId === test.testId && 
+              pt.paymentVerified && 
+              new Date(pt.createdAt).toDateString() === new Date().toDateString()
+            );
+            
+            if (!testExists) {
+              await storage.createPatientTest({
+                patientId: invoice.patientId,
+                testId: test.testId,
+                status: 'pending',
+                scheduledAt: new Date(),
+                branchId: req.user!.branchId,
+                tenantId: req.user!.tenantId,
+                paymentVerified: true,
+                paymentVerifiedBy: req.user!.id,
+                paymentVerifiedAt: new Date()
+              });
+              console.log(`Created patient test record for: ${test.name || 'Test'} (ID: ${test.testId})`);
+            } else {
+              console.log(`Patient test already exists for: ${test.name || 'Test'} (ID: ${test.testId})`);
+            }
           } catch (testError) {
             console.error(`Error creating patient test for ${test.name}:`, testError);
           }
