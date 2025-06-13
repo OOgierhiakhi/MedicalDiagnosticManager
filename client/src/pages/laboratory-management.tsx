@@ -1367,6 +1367,16 @@ export default function LaboratoryManagement() {
                                 if (test.results) setTestResults(test.results);
                                 if (test.notes) setTestNotes(test.notes);
                                 if (test.scientistSignature) setScientistSignature(test.scientistSignature);
+                                
+                                // Pre-populate parameter values from saved results
+                                if (test.parameterResults) {
+                                  try {
+                                    const savedResults = JSON.parse(test.parameterResults);
+                                    setResultValues(savedResults);
+                                  } catch (error) {
+                                    console.error("Error parsing parameter results:", error);
+                                  }
+                                }
                               }}
                             >
                               <FileText className="w-4 h-4 mr-1" />
