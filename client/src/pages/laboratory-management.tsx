@@ -1203,7 +1203,7 @@ export default function LaboratoryManagement() {
                       
                       <div className="flex items-center gap-2 ml-4">
                         {/* Payment Verification Step */}
-                        {test.status === "scheduled" && !test.paymentVerified && (
+                        {(test.status === "scheduled" || test.status === "pending") && !test.paymentVerified && (
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -1228,7 +1228,7 @@ export default function LaboratoryManagement() {
                         )}
                         
                         {/* Specimen Collection Step */}
-                        {test.status === "specimen_collected" && (
+                        {(test.status === "pending" || test.status === "specimen_collection") && test.paymentVerified && !test.specimenCollected && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
@@ -1283,7 +1283,7 @@ export default function LaboratoryManagement() {
                         )}
                         
                         {/* Processing Step */}
-                        {test.specimenCollected && !test.processingStarted && (
+                        {test.paymentVerified && test.specimenCollected && !test.processingStarted && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
@@ -1334,7 +1334,7 @@ export default function LaboratoryManagement() {
                         )}
                         
                         {/* Complete Test Step */}
-                        {test.processingStarted && test.status !== "completed" && (
+                        {test.paymentVerified && test.specimenCollected && test.processingStarted && test.status !== "completed" && test.status !== "reported_and_saved" && (
                           <Button
                             variant="outline"
                             size="sm"
