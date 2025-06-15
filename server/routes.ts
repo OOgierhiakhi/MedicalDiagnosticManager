@@ -15481,6 +15481,91 @@ Medical System Procurement Team
     }
   });
 
+  // Start ultrasound study
+  app.post("/api/ultrasound/studies/:studyId/start", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { studyId } = req.params;
+      const user = req.user as any;
+      
+      // Update the study status to 'in-progress'
+      // For now, we'll use a simple in-memory status tracking
+      if (!global.ultrasoundStudyStatuses) {
+        global.ultrasoundStudyStatuses = {};
+      }
+      
+      global.ultrasoundStudyStatuses[studyId] = {
+        status: 'in-progress',
+        startedAt: new Date().toISOString(),
+        startedBy: user.username
+      };
+      
+      console.log(`Ultrasound study ${studyId} started by ${user.username}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Study started successfully',
+        studyId,
+        status: 'in-progress'
+      });
+    } catch (error: any) {
+      console.error('Error starting ultrasound study:', error);
+      res.status(500).json({ error: 'Failed to start study' });
+    }
+  });
+
+  // Submit ultrasound report
+  app.post("/api/ultrasound/studies/:studyId/report", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { studyId } = req.params;
+      const { findings, impression, recommendation } = req.body;
+      const user = req.user as any;
+      
+      // Validate required fields
+      if (!findings || !findings.trim()) {
+        return res.status(400).json({ error: 'Clinical findings are required' });
+      }
+      
+      // Update the study status to 'completed' and save report
+      if (!global.ultrasoundStudyStatuses) {
+        global.ultrasoundStudyStatuses = {};
+      }
+      
+      if (!global.ultrasoundReports) {
+        global.ultrasoundReports = {};
+      }
+      
+      global.ultrasoundStudyStatuses[studyId] = {
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        completedBy: user.username
+      };
+      
+      global.ultrasoundReports[studyId] = {
+        findings: findings.trim(),
+        impression: impression?.trim() || '',
+        recommendation: recommendation?.trim() || '',
+        reportedBy: user.username,
+        reportedAt: new Date().toISOString()
+      };
+      
+      console.log(`Ultrasound report completed for study ${studyId} by ${user.username}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Report saved successfully',
+        studyId,
+        status: 'completed'
+      });
+    } catch (error: any) {
+      console.error('Error saving ultrasound report:', error);
+      res.status(500).json({ error: 'Failed to save report' });
+    }
+  });
+
   // Cardiology Department API endpoints
   app.get("/api/cardiology/metrics", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

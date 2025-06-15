@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Calendar, FileText, Activity, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Calendar, FileText, Activity, Clock, CheckCircle, AlertTriangle, Edit3 } from "lucide-react";
 import DashboardMessaging from "@/components/dashboard-messaging";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +30,12 @@ export default function UltrasoundDashboard() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [reportDialog, setReportDialog] = useState({ open: false, studyId: "", patientName: "" });
+  const [reportData, setReportData] = useState({
+    findings: "",
+    impression: "",
+    recommendation: ""
+  });
 
   // Fetch ultrasound studies
   const { data: studies = [], isLoading } = useQuery<UltrasoundStudy[]>({
@@ -63,6 +72,30 @@ export default function UltrasoundDashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to start study",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for completing ultrasound reports
+  const completeReportMutation = useMutation({
+    mutationFn: async ({ studyId, reportData }: { studyId: string; reportData: any }) => {
+      return apiRequest("POST", `/api/ultrasound/studies/${studyId}/report`, reportData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/studies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ultrasound/metrics"] });
+      setReportDialog({ open: false, studyId: "", patientName: "" });
+      setReportData({ findings: "", impression: "", recommendation: "" });
+      toast({
+        title: "Report Completed",
+        description: "Ultrasound report has been saved successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save report",
         variant: "destructive",
       });
     },
@@ -285,17 +318,99 @@ export default function UltrasoundDashboard() {
                       <TableCell>{study.technician}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" title="View Report">
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => startStudyMutation.mutate(study.id)}
-                            disabled={startStudyMutation.isPending}
-                          >
-                            {startStudyMutation.isPending ? "Starting..." : "Start Study"}
-                          </Button>
+                          {study.status === "completed" && (
+                            <Button size="sm" variant="outline" title="View Report">
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {study.status === "scheduled" && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => startStudyMutation.mutate(study.id)}
+                              disabled={startStudyMutation.isPending}
+                            >
+                              {startStudyMutation.isPending ? "Starting..." : "Start Study"}
+                            </Button>
+                          )}
+                          
+                          {study.status === "in-progress" && (
+                            <Dialog 
+                              open={reportDialog.open && reportDialog.studyId === study.id}
+                              onOpenChange={(open) => setReportDialog(
+                                open 
+                                  ? { open: true, studyId: study.id, patientName: study.patientName }
+                                  : { open: false, studyId: "", patientName: "" }
+                              )}
+                            >
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="default">
+                                  <Edit3 className="h-4 w-4 mr-1" />
+                                  Write Report
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>
+                                    Ultrasound Report - {study.patientName}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4">
+                                  <div>
+                                    <Label htmlFor="findings">Clinical Findings</Label>
+                                    <Textarea
+                                      id="findings"
+                                      placeholder="Describe the ultrasound findings..."
+                                      value={reportData.findings}
+                                      onChange={(e) => setReportData(prev => ({ ...prev, findings: e.target.value }))}
+                                      className="min-h-[100px]"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label htmlFor="impression">Impression</Label>
+                                    <Textarea
+                                      id="impression"
+                                      placeholder="Clinical impression based on findings..."
+                                      value={reportData.impression}
+                                      onChange={(e) => setReportData(prev => ({ ...prev, impression: e.target.value }))}
+                                      className="min-h-[80px]"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label htmlFor="recommendation">Recommendations</Label>
+                                    <Textarea
+                                      id="recommendation"
+                                      placeholder="Clinical recommendations and follow-up..."
+                                      value={reportData.recommendation}
+                                      onChange={(e) => setReportData(prev => ({ ...prev, recommendation: e.target.value }))}
+                                      className="min-h-[60px]"
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex justify-end gap-2 pt-4">
+                                    <Button 
+                                      variant="outline" 
+                                      onClick={() => setReportDialog({ open: false, studyId: "", patientName: "" })}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button 
+                                      onClick={() => completeReportMutation.mutate({ 
+                                        studyId: study.id, 
+                                        reportData 
+                                      })}
+                                      disabled={completeReportMutation.isPending || !reportData.findings.trim()}
+                                    >
+                                      {completeReportMutation.isPending ? "Saving..." : "Complete Report"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
