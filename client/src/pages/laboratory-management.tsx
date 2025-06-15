@@ -220,6 +220,8 @@ export default function LaboratoryManagement() {
     enabled: !!user?.tenantId,
   });
 
+
+
   // Update test results mutation
   const updateTestResultsMutation = useMutation({
     mutationFn: async ({ testId, results, notes, status }: { testId: number; results: string; notes: string; status: string }) => {
@@ -1122,13 +1124,16 @@ export default function LaboratoryManagement() {
                               <FileText className="w-4 h-4 mr-1" />
                               {test.status === "reported_and_saved" ? "View Report" : "View Results"}
                             </Button>
-                            {test.status === "reported_and_saved" && (
+                            
+                            {/* Print and Share buttons for both completed and reported_and_saved tests */}
+                            {(test.status === "completed" || test.status === "reported_and_saved") && (
                               <div className="flex gap-1">
                                 <Button 
                                   variant="outline" 
                                   size="sm"
                                   onClick={() => handlePrintReport(test)}
                                   className="text-blue-600 border-blue-300"
+                                  title="Print Laboratory Report"
                                 >
                                   <Printer className="w-4 h-4" />
                                 </Button>
@@ -1142,6 +1147,7 @@ export default function LaboratoryManagement() {
                                     });
                                   }}
                                   className="text-green-600 border-green-300"
+                                  title="Share Laboratory Report"
                                 >
                                   <Send className="w-4 h-4" />
                                 </Button>
