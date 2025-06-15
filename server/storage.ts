@@ -1053,12 +1053,11 @@ export class DatabaseStorage implements IStorage {
         completedAt: now,
         results: interpretation,
         notes: additionalNotes,
-        completedBy: completedBy
+        completedBy: completedBy,
+        parameterResults: JSON.stringify(structuredResults) // Save the structured parameter values
       })
       .where(eq(patientTests.id, testId));
 
-    // Save individual parameter results (if tables exist)
-    // This would require the test parameter tables to be created
     console.log("Structured results saved:", structuredResults);
   }
 
