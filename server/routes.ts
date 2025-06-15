@@ -226,8 +226,8 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
 
       if (testParameters && testParameters.length > 0) {
         // Structured parameters table header
-        doc.text('Parameter                    Result         Reference Range    Unit');
-        doc.text('─'.repeat(80));
+        doc.text('Parameter                    Result         Reference Range    Unit     Flag');
+        doc.text('─'.repeat(90));
         
         // Parse saved parameter results
         let savedResults: { [key: string]: any } = {};
@@ -242,11 +242,34 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
         
         testParameters.forEach((param: any) => {
           // Try to get result using parameter ID as both string and number
-          const result = savedResults[param.id.toString()] || savedResults[param.id] || '-';
-          console.log(`Parameter ${param.parameterName} (ID: ${param.id}): Result = ${result}`);
+          const resultData = savedResults[param.id.toString()] || savedResults[param.id];
+          console.log(`Parameter ${param.parameterName} (ID: ${param.id}): Result data = ${JSON.stringify(resultData)}`);
+          
+          // Extract actual value from result data
+          let resultValue = '-';
+          let flag = '';
+          
+          if (resultData) {
+            if (typeof resultData === 'object') {
+              // If it's an object, extract the value and status
+              resultValue = resultData.value || resultData.numericValue || '-';
+              const status = resultData.status || '';
+              flag = resultData.flag || '';
+              
+              // Set flag based on status if not already set
+              if (!flag && status) {
+                if (status === 'high') flag = 'H';
+                else if (status === 'low') flag = 'L';
+                else if (status === 'normal') flag = 'N';
+              }
+            } else {
+              // If it's a simple value
+              resultValue = resultData;
+            }
+          }
           
           const paramName = param.parameterName.length > 25 ? param.parameterName.substring(0, 22) + '...' : param.parameterName;
-          const resultText = result.toString().length > 12 ? result.toString().substring(0, 9) + '...' : result.toString();
+          const resultText = resultValue.toString().length > 12 ? resultValue.toString().substring(0, 9) + '...' : resultValue.toString();
           
           // Use normalRangeText if available, otherwise construct from min/max
           let refRange = param.normalRangeText || param.referenceRange;
@@ -257,7 +280,7 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
           
           const refRangeText = refRange.length > 15 ? refRange.substring(0, 12) + '...' : refRange;
           
-          doc.text(`${paramName.padEnd(25)} ${resultText.padEnd(14)} ${refRangeText.padEnd(16)} ${param.unit || ''}`);
+          doc.text(`${paramName.padEnd(25)} ${resultText.padEnd(14)} ${refRangeText.padEnd(16)} ${(param.unit || '').padEnd(8)} ${flag}`);
         });
       } else {
         // Free text results
