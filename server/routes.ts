@@ -225,10 +225,6 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
       doc.fontSize(11);
 
       if (testParameters && testParameters.length > 0) {
-        // Structured parameters table header
-        doc.text('Parameter                    Result         Reference Range    Unit     Flag');
-        doc.text('─'.repeat(90));
-        
         // Parse saved parameter results
         let savedResults: { [key: string]: any } = {};
         try {
@@ -239,6 +235,26 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
         } catch (e) {
           console.error('Error parsing parameter results:', e);
         }
+        
+        // Create table structure
+        const tableTop = doc.y;
+        const columnWidths = [180, 60, 120, 50, 30]; // Parameter, Result, Reference Range, Unit, Flag
+        const columnPositions = [50, 230, 290, 410, 460]; // X positions for each column
+        
+        // Table headers
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Parameter', columnPositions[0], tableTop);
+        doc.text('Result', columnPositions[1], tableTop);
+        doc.text('Reference Range', columnPositions[2], tableTop);
+        doc.text('Unit', columnPositions[3], tableTop);
+        doc.text('Flag', columnPositions[4], tableTop);
+        
+        // Header line
+        const headerLineY = tableTop + 15;
+        doc.moveTo(50, headerLineY).lineTo(490, headerLineY).stroke();
+        
+        let currentY = headerLineY + 10;
+        doc.font('Helvetica').fontSize(9);
         
         testParameters.forEach((param: any) => {
           // Try to get result using parameter ID as both string and number
@@ -268,9 +284,6 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
             }
           }
           
-          const paramName = param.parameterName.length > 25 ? param.parameterName.substring(0, 22) + '...' : param.parameterName;
-          const resultText = resultValue.toString().length > 12 ? resultValue.toString().substring(0, 9) + '...' : resultValue.toString();
-          
           // Use normalRangeText if available, otherwise construct from min/max
           let refRange = param.normalRangeText || param.referenceRange;
           if (!refRange && param.normalRangeMin !== null && param.normalRangeMax !== null) {
@@ -278,10 +291,37 @@ async function generateLaboratoryReportPDF(reportData: any): Promise<Buffer> {
           }
           refRange = refRange || 'N/A';
           
-          const refRangeText = refRange.length > 15 ? refRange.substring(0, 12) + '...' : refRange;
+          // Truncate long text to fit columns
+          const paramName = param.parameterName.length > 25 ? param.parameterName.substring(0, 22) + '...' : param.parameterName;
+          const resultText = resultValue.toString();
+          const refRangeText = refRange.length > 18 ? refRange.substring(0, 15) + '...' : refRange;
+          const unitText = param.unit || '';
           
-          doc.text(`${paramName.padEnd(25)} ${resultText.padEnd(14)} ${refRangeText.padEnd(16)} ${(param.unit || '').padEnd(8)} ${flag}`);
+          // Draw table row
+          doc.text(paramName, columnPositions[0], currentY);
+          doc.text(resultText, columnPositions[1], currentY);
+          doc.text(refRangeText, columnPositions[2], currentY);
+          doc.text(unitText, columnPositions[3], currentY);
+          
+          // Highlight abnormal flags
+          if (flag === 'H' || flag === 'L') {
+            doc.font('Helvetica-Bold');
+          }
+          doc.text(flag, columnPositions[4], currentY);
+          doc.font('Helvetica');
+          
+          currentY += 15;
+          
+          // Add page break if needed
+          if (currentY > 700) {
+            doc.addPage();
+            currentY = 50;
+          }
         });
+        
+        // Bottom border of table
+        doc.moveTo(50, currentY + 5).lineTo(490, currentY + 5).stroke();
+        doc.y = currentY + 15;
       } else {
         // Free text results
         doc.text(test.results || 'Results pending');
