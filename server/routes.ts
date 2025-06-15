@@ -2963,22 +2963,37 @@ export function registerRoutes(app: Express): Server {
           const directResults = await storage.getPatientTestsByCategory(userBranchId, 'Imaging', 50);
           console.log('Direct query results:', directResults.length);
           
-          const formattedResults = directResults.map(test => ({
-            id: `pt-${test.id}`,
-            testId: test.testId,
-            testName: test.testName,
-            patientId: test.patientId,
-            patientName: test.patientName,
-            price: test.price || 0,
-            status: test.status || 'scheduled',
-            scheduledAt: test.scheduledAt,
-            categoryName: 'Imaging',
-            paymentMethod: 'paid',
-            paymentVerified: test.paymentVerified || false,
-            paymentVerifiedAt: test.paymentVerifiedAt,
-            specimenCollected: test.specimenCollected || false,
-            processingStarted: test.processingStarted || false
-          }));
+          const formattedResults = directResults.map(test => {
+            // Map laboratory workflow statuses to imaging workflow statuses
+            let imagingStatus = test.status || 'scheduled';
+            
+            // Fix inappropriate laboratory statuses for imaging procedures
+            if (test.status === 'specimen_collected' || test.status === 'processing') {
+              imagingStatus = 'in_progress'; // Images are being captured/processed
+            } else if (test.status === 'completed' || test.status === 'reported') {
+              imagingStatus = 'completed'; // Study completed with report
+            } else if (test.status === 'scheduled' && test.paymentVerified) {
+              imagingStatus = 'payment_verified'; // Ready for imaging
+            }
+            
+            return {
+              id: `pt-${test.id}`,
+              testId: test.testId,
+              testName: test.testName,
+              patientId: test.patientId,
+              patientName: test.patientName,
+              price: test.price || 0,
+              status: imagingStatus,
+              scheduledAt: test.scheduledAt,
+              categoryName: 'Imaging',
+              paymentMethod: 'paid',
+              paymentVerified: test.paymentVerified || false,
+              paymentVerifiedAt: test.paymentVerifiedAt,
+              // Remove inappropriate laboratory workflow fields for imaging
+              imagingStarted: test.processingStarted || false,
+              reportCompleted: test.status === 'completed' || test.status === 'reported'
+            };
+          });
           
           return res.json(formattedResults);
         } catch (directError) {

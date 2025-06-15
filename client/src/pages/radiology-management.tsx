@@ -67,6 +67,30 @@ export default function RadiologyManagement() {
     return "bg-white border-gray-200";
   };
 
+  // Helper function to get appropriate imaging workflow status label
+  const getImagingStatusLabel = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'SCHEDULED';
+      case 'payment_verified':
+        return 'PAYMENT VERIFIED';
+      case 'in_progress':
+        return 'IMAGING IN PROGRESS';
+      case 'processing':
+        return 'IMAGING IN PROGRESS';
+      case 'specimen_collected':
+        return 'IMAGING IN PROGRESS'; // Fix inappropriate lab status for imaging
+      case 'completed':
+        return 'STUDY COMPLETED';
+      case 'reported':
+        return 'REPORT AVAILABLE';
+      case 'reported_and_saved':
+        return 'REPORT RELEASED';
+      default:
+        return status?.toUpperCase() || 'SCHEDULED';
+    }
+  };
+
   // Workflow mutations
   const verifyPaymentMutation = useMutation({
     mutationFn: async (studyId: string) => {
@@ -488,7 +512,7 @@ export default function RadiologyManagement() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={study.status === 'scheduled' ? 'secondary' : study.status === 'in_progress' ? 'default' : 'outline'}>
-                        {study.status?.replace('_', ' ').toUpperCase() || 'SCHEDULED'}
+                        {getImagingStatusLabel(study.status)}
                       </Badge>
                       
                       {study.status === 'scheduled' && !study.paymentVerified && (
@@ -616,7 +640,7 @@ export default function RadiologyManagement() {
                         <p className="text-xs text-gray-500">₦{study.price?.toLocaleString()}</p>
                       </div>
                       <Badge className={getStatusBadge(study.status)}>
-                        {study.status?.toUpperCase() || 'SCHEDULED'}
+                        {getImagingStatusLabel(study.status)}
                       </Badge>
                       {(study.status === 'processing' || study.status === 'in_progress') && (
                         <Button 
