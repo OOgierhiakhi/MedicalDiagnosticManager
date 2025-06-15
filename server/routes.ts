@@ -15458,16 +15458,43 @@ Medical System Procurement Team
         for (const test of ultrasoundTestsInInvoice) {
           const testName = test.description || test.name || 'Ultrasound Study';
           const testPrice = test.unitPrice || test.price || test.total || 0;
+          const studyId = `us-${invoice.id}-${test.testId || Math.random()}`;
+          
+          // Check if this study has been started or completed
+          let status = 'scheduled';
+          let bodyPart = '';
+          let technician = '';
+          
+          // Determine body part from test name
+          const testLower = testName.toLowerCase();
+          if (testLower.includes('breast')) bodyPart = 'Breast';
+          else if (testLower.includes('pelv')) bodyPart = 'Pelvis';
+          else if (testLower.includes('abdom')) bodyPart = 'Abdomen';
+          else if (testLower.includes('thyroid')) bodyPart = 'Thyroid';
+          else if (testLower.includes('cardiac') || testLower.includes('heart')) bodyPart = 'Cardiac';
+          else bodyPart = 'General';
+          
+          // Assign technician based on body part
+          if (bodyPart === 'Breast') technician = 'Dr. Sarah Johnson';
+          else if (bodyPart === 'Cardiac') technician = 'Dr. Michael Chen';
+          else technician = 'Dr. Emily Davis';
+          
+          // Check global status tracking
+          if (global.ultrasoundStudyStatuses && global.ultrasoundStudyStatuses[studyId]) {
+            status = global.ultrasoundStudyStatuses[studyId].status;
+          }
           
           ultrasoundStudies.push({
-            id: `us-${invoice.id}-${test.testId || Math.random()}`,
+            id: studyId,
             studyType: testName,
             patientName: `${invoice.patientFirstName || ''} ${invoice.patientLastName || ''}`.trim(),
             patientId: invoice.patientIdNumber || `P${invoice.patientId}`,
-            scheduledAt: invoice.createdAt,
-            status: 'scheduled',
-            price: testPrice,
+            scheduledTime: invoice.createdAt,
+            status: status,
+            bodyPart: bodyPart,
+            technician: technician,
             priority: 'routine',
+            price: testPrice,
             paymentVerified: true,
             invoiceId: invoice.id
           });
