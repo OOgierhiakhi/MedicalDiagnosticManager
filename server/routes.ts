@@ -1811,12 +1811,13 @@ export function registerRoutes(app: Express): Server {
         
         for (const test of tests) {
           try {
-            // Check if patient test already exists for this patient and test
+            // Check if patient test already exists for this patient and test (more robust check)
             const existingTests = await storage.getPatientTestsByPatient(invoice.patientId);
             const testExists = existingTests.some(pt => 
               pt.testId === test.testId && 
-              pt.paymentVerified && 
-              new Date(pt.createdAt).toDateString() === new Date().toDateString()
+              (pt.paymentVerified || pt.status !== 'cancelled') &&
+              // Check within the last 24 hours to prevent genuine duplicates but allow reorders
+              new Date(pt.createdAt).getTime() > (Date.now() - 24 * 60 * 60 * 1000)
             );
             
             if (!testExists) {
