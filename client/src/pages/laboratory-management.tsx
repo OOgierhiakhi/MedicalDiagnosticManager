@@ -1267,14 +1267,14 @@ export default function LaboratoryManagement() {
 
       {/* Test Results Dialog */}
       <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0 pb-4 border-b">
             <DialogTitle>Update Test Results</DialogTitle>
           </DialogHeader>
           
           {selectedTest && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded">
+            <div className="flex-1 overflow-y-auto space-y-6 p-1 min-h-0">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded flex-shrink-0">
                 <div>
                   <p className="text-sm text-gray-600">Test</p>
                   <p className="font-medium">{selectedTest.testName}</p>
@@ -1308,7 +1308,7 @@ export default function LaboratoryManagement() {
                       </Button>
                     </div>
                     
-                    <div className="grid gap-4 max-h-96 overflow-y-auto">
+                    <div className="grid gap-4 max-h-80 overflow-y-auto">
                       {testParameters.map((param: any) => {
                         const value = resultValues[param.id] || "";
                         const interpretation = value ? interpretResult(param, value) : { status: "normal", flag: "" };
