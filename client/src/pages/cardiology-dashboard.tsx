@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Calendar, Heart, Activity, Clock, CheckCircle, AlertTriangle, Zap } from "lucide-react";
+import { Search, Calendar, Heart, Activity, Clock, CheckCircle, AlertTriangle, Zap, FileText, Printer, Edit3 } from "lucide-react";
 import DashboardMessaging from "@/components/dashboard-messaging";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -84,6 +84,27 @@ export default function CardiologyDashboard() {
         return <Activity className="h-4 w-4" />;
       default:
         return <Heart className="h-4 w-4" />;
+    }
+  };
+
+  // Get proper cardiology status labels for imaging workflow
+  const getCardiologyStatusLabel = (status: string) => {
+    switch (status) {
+      case "specimen_collected":
+      case "processing":
+      case "in_progress":
+        return "STUDY IN PROGRESS";
+      case "completed":
+        return "STUDY COMPLETED";
+      case "reported":
+      case "reported_and_saved":
+        return "REPORT AVAILABLE";
+      case "scheduled":
+        return "SCHEDULED";
+      case "payment_verified":
+        return "PAYMENT VERIFIED";
+      default:
+        return status.toUpperCase().replace(/_/g, ' ');
     }
   };
 

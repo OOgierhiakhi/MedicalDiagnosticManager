@@ -15623,6 +15623,87 @@ Medical System Procurement Team
     }
   });
 
+  // Generate ultrasound report PDF
+  app.get("/api/ultrasound/reports/:studyId/pdf", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { studyId } = req.params;
+      const user = req.user as any;
+      
+      // Get report data
+      const reportData = global.ultrasoundReports?.[studyId];
+      if (!reportData) {
+        return res.status(404).json({ error: 'Report not found' });
+      }
+      
+      // Get study details (simplified for now)
+      const studyDetails = {
+        id: studyId,
+        patientName: 'Patient Name', // This would come from actual study data
+        studyType: 'Ultrasound Study',
+        studyDate: new Date().toLocaleDateString(),
+        technician: reportData.reportedBy
+      };
+      
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument();
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="ultrasound-report-${studyId}.pdf"`);
+      
+      doc.pipe(res);
+      
+      // Header
+      doc.fontSize(20).text('ULTRASOUND REPORT', 50, 50);
+      doc.fontSize(12).text('Orient Medical Diagnostic Centre', 50, 80);
+      doc.text('-------------------------------------------', 50, 100);
+      
+      // Patient and Study Information
+      doc.text(`Study ID: ${studyDetails.id}`, 50, 130);
+      doc.text(`Patient: ${studyDetails.patientName}`, 50, 150);
+      doc.text(`Study Type: ${studyDetails.studyType}`, 50, 170);
+      doc.text(`Study Date: ${studyDetails.studyDate}`, 50, 190);
+      doc.text(`Technician: ${studyDetails.technician}`, 50, 210);
+      doc.text('-------------------------------------------', 50, 230);
+      
+      // Clinical Findings
+      doc.fontSize(14).text('CLINICAL FINDINGS:', 50, 260);
+      doc.fontSize(11).text(reportData.findings || 'No findings documented', 50, 280, {
+        width: 500,
+        align: 'left'
+      });
+      
+      // Impression
+      if (reportData.impression) {
+        doc.fontSize(14).text('IMPRESSION:', 50, 350);
+        doc.fontSize(11).text(reportData.impression, 50, 370, {
+          width: 500,
+          align: 'left'
+        });
+      }
+      
+      // Recommendation
+      if (reportData.recommendation) {
+        doc.fontSize(14).text('RECOMMENDATION:', 50, 440);
+        doc.fontSize(11).text(reportData.recommendation, 50, 460, {
+          width: 500,
+          align: 'left'
+        });
+      }
+      
+      // Footer
+      doc.fontSize(10).text(`Report generated on: ${new Date().toLocaleString()}`, 50, 700);
+      doc.text(`Reported by: ${reportData.reportedBy}`, 50, 720);
+      
+      doc.end();
+      
+    } catch (error: any) {
+      console.error('Error generating ultrasound report PDF:', error);
+      res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+  });
+
   // Cardiology Department API endpoints
   app.get("/api/cardiology/metrics", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

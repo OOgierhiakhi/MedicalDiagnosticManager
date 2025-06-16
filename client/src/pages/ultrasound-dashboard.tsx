@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Calendar, FileText, Activity, Clock, CheckCircle, AlertTriangle, Edit3 } from "lucide-react";
+import { Search, Calendar, FileText, Activity, Clock, CheckCircle, AlertTriangle, Edit3, Printer } from "lucide-react";
 import DashboardMessaging from "@/components/dashboard-messaging";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -344,10 +344,25 @@ export default function UltrasoundDashboard() {
                       <TableCell>{study.technician}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {study.status === "completed" && (
-                            <Button size="sm" variant="outline" title="View Report">
-                              <FileText className="h-4 w-4" />
-                            </Button>
+                          {(study.status === "completed" || study.status === "reported" || study.status === "reported_and_saved") && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="View Report"
+                                onClick={() => window.open(`/report-viewer/${study.id}`, '_blank')}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="Print Report"
+                                onClick={() => window.open(`/api/ultrasound/reports/${study.id}/pdf`, '_blank')}
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           
                           {study.status === "scheduled" && (
