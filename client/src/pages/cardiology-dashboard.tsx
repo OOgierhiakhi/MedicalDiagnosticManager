@@ -266,18 +266,46 @@ export default function CardiologyDashboard() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusColor(test.status) as "default" | "destructive" | "outline" | "secondary"}>
-                          {test.status}
+                          {getCardiologyStatusLabel(test.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>{test.technician}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline">
-                            Start Test
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            View Details
-                          </Button>
+                          {(test.status === "completed" || test.status === "reported" || test.status === "reported_and_saved") && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="View Report"
+                                onClick={() => window.open(`/report-viewer/${test.id}`, '_blank')}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                title="Print Report"
+                                onClick={() => window.open(`/api/cardiology/reports/${test.id}/pdf`, '_blank')}
+                              >
+                                <Printer className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {test.status === "scheduled" && (
+                            <Button size="sm" variant="outline">
+                              <Activity className="h-4 w-4 mr-1" />
+                              Start Test
+                            </Button>
+                          )}
+                          
+                          {(test.status === "in_progress" || test.status === "processing" || test.status === "specimen_collected") && (
+                            <Button size="sm" variant="default">
+                              <Edit3 className="h-4 w-4 mr-1" />
+                              Write Report
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -5057,15 +5057,17 @@ export function registerRoutes(app: Express): Server {
             technician = 'Dr. Sarah Wilson';
           }
           
-          // Determine status based on timing
+          // Determine status based on timing - map to proper imaging workflow statuses
           let status = 'scheduled';
           const now = new Date();
           if (baseTime < now) {
             const hoursPassed = (now.getTime() - baseTime.getTime()) / (1000 * 60 * 60);
             if (hoursPassed > (duration / 60)) {
-              status = Math.random() > 0.2 ? 'completed' : 'in-progress';
+              // Map laboratory statuses to imaging workflow statuses
+              status = Math.random() > 0.2 ? 'completed' : 'in_progress';
             } else {
-              status = 'in-progress';
+              // Use proper imaging workflow status instead of laboratory status
+              status = 'in_progress';
             }
           }
           
@@ -15700,6 +15702,160 @@ Medical System Procurement Team
       
     } catch (error: any) {
       console.error('Error generating ultrasound report PDF:', error);
+      res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+  });
+
+  // Cardiology Report PDF Generation Function
+  async function generateCardiologyReportPDF(reportData: any): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const PDFDocument = (await import('pdfkit')).default;
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks: Buffer[] = [];
+
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        // Header
+        doc.fontSize(18).text('Orient Medical Diagnostic Centre', { align: 'center' });
+        doc.fontSize(12).text('Cardiology Department', { align: 'center' });
+        doc.moveDown(0.5);
+        
+        doc.fontSize(16).text('CARDIOLOGY REPORT', { align: 'center', underline: true });
+        doc.moveDown();
+
+        // Patient Information
+        doc.fontSize(14).text('PATIENT INFORMATION', { underline: true });
+        doc.fontSize(11);
+        doc.text(`Name: ${reportData.patientName}`);
+        doc.text(`Patient ID: ${reportData.patientId}`);
+        doc.text(`Date of Birth: ${reportData.dateOfBirth}`);
+        doc.text(`Gender: ${reportData.gender}`);
+        doc.moveDown();
+
+        // Test Information
+        doc.fontSize(14).text('TEST INFORMATION', { underline: true });
+        doc.fontSize(11);
+        doc.text(`Test Type: ${reportData.testType}`);
+        doc.text(`Test Date: ${reportData.testDate}`);
+        doc.text(`Technician: ${reportData.technician}`);
+        doc.text(`Cardiologist: ${reportData.cardiologist}`);
+        doc.text(`Indication: ${reportData.indication}`);
+        doc.moveDown();
+
+        // Clinical Findings
+        doc.fontSize(14).text('CLINICAL FINDINGS', { underline: true });
+        doc.fontSize(11);
+        
+        if (reportData.testType.includes('ECG')) {
+          // ECG specific findings
+          doc.text(`Rhythm: ${reportData.findings.rhythm}`);
+          doc.text(`Heart Rate: ${reportData.findings.rate}`);
+          doc.text(`PR Interval: ${reportData.findings.intervals.pr}`);
+          doc.text(`QRS Duration: ${reportData.findings.intervals.qrs}`);
+          doc.text(`QT Interval: ${reportData.findings.intervals.qt}`);
+          doc.text(`QTc: ${reportData.findings.intervals.qtc}`);
+          doc.text(`Axis: ${reportData.findings.axis}`);
+          doc.moveDown();
+          
+          doc.fontSize(12).text('Interpretation:', { underline: true });
+          doc.fontSize(11).text(reportData.findings.interpretation, {
+            width: 500,
+            align: 'left'
+          });
+        } else {
+          // General cardiology findings
+          doc.text(reportData.findings.interpretation || 'Normal cardiac study', {
+            width: 500,
+            align: 'left'
+          });
+        }
+        
+        doc.moveDown();
+
+        // Conclusion
+        doc.fontSize(14).text('CONCLUSION', { underline: true });
+        doc.fontSize(11).text(reportData.conclusion, {
+          width: 500,
+          align: 'left'
+        });
+        doc.moveDown();
+
+        // Recommendations
+        if (reportData.recommendations) {
+          doc.fontSize(14).text('RECOMMENDATIONS', { underline: true });
+          doc.fontSize(11).text(reportData.recommendations, {
+            width: 500,
+            align: 'left'
+          });
+          doc.moveDown();
+        }
+
+        // Signature
+        doc.fontSize(12).text('CARDIOLOGIST SIGNATURE', { underline: true });
+        doc.fontSize(11);
+        doc.text(`Reviewed by: ${reportData.cardiologist}`);
+        doc.text(`Date: ${new Date(reportData.reportedAt).toLocaleDateString()}`);
+        doc.moveDown();
+
+        // Footer
+        doc.fontSize(9);
+        doc.text(`Report ID: ${reportData.id}`, { align: 'left' });
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, { align: 'left' });
+        doc.text('This report is confidential and intended for the named patient only.', { align: 'center' });
+        
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Cardiology PDF Report Generation
+  app.get("/api/cardiology/reports/:testId/pdf", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const testId = req.params.testId;
+      
+      // Mock cardiology report data based on test ID
+      const cardiologyReport = {
+        id: testId,
+        patientName: "John Doe",
+        patientId: "P12345",
+        dateOfBirth: "1985-06-15",
+        gender: "Male",
+        testDate: new Date().toISOString().split('T')[0],
+        testType: "12-Lead ECG",
+        technician: "Tech. John Smith",
+        cardiologist: "Dr. Sarah Wilson",
+        indication: "Routine cardiac screening",
+        findings: {
+          rhythm: "Normal sinus rhythm",
+          rate: "72 bpm",
+          intervals: {
+            pr: "160 ms",
+            qrs: "85 ms",
+            qt: "400 ms",
+            qtc: "420 ms"
+          },
+          axis: "Normal axis (+30°)",
+          interpretation: "Normal 12-lead ECG. No acute ST-T wave changes. No evidence of arrhythmia."
+        },
+        conclusion: "Normal electrocardiogram. No cardiac abnormalities detected.",
+        recommendations: "Continue routine cardiac monitoring as clinically indicated.",
+        reportedAt: new Date().toISOString()
+      };
+
+      const pdfBuffer = await generateCardiologyReportPDF(cardiologyReport);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="cardiology-report-${testId}.pdf"`);
+      res.send(pdfBuffer);
+      
+    } catch (error: any) {
+      console.error('Error generating cardiology report PDF:', error);
       res.status(500).json({ error: 'Failed to generate PDF report' });
     }
   });
