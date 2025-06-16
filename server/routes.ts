@@ -2683,22 +2683,37 @@ export function registerRoutes(app: Express): Server {
           const directResults = await storage.getPatientTestsByCategory(branchId, 'Ultrasound', 50);
           console.log('Direct ultrasound query results:', directResults.length);
           
-          const formattedResults = directResults.map(test => ({
-            id: `pt-${test.id}`,
-            testId: test.testId,
-            testName: test.testName,
-            patientId: test.patientId,
-            patientName: test.patientName,
-            price: test.price || 0,
-            status: test.status || 'scheduled',
-            scheduledAt: test.scheduledAt,
-            categoryName: 'Ultrasound Services',
-            paymentMethod: 'paid',
-            paymentVerified: test.paymentVerified || false,
-            paymentVerifiedAt: test.paymentVerifiedAt,
-            specimenCollected: test.specimenCollected || false,
-            processingStarted: test.processingStarted || false
-          }));
+          const formattedResults = directResults.map(test => {
+            // Map laboratory workflow statuses to ultrasound imaging workflow statuses
+            let ultrasoundStatus = test.status || 'scheduled';
+            
+            // Fix inappropriate laboratory statuses for ultrasound procedures
+            if (test.status === 'specimen_collected' || test.status === 'processing') {
+              ultrasoundStatus = 'in_progress'; // Ultrasound study in progress
+            } else if (test.status === 'completed' || test.status === 'reported') {
+              ultrasoundStatus = 'completed'; // Study completed with report
+            } else if (test.status === 'scheduled' && test.paymentVerified) {
+              ultrasoundStatus = 'payment_verified'; // Ready for ultrasound
+            }
+            
+            return {
+              id: `pt-${test.id}`,
+              testId: test.testId,
+              testName: test.testName,
+              patientId: test.patientId,
+              patientName: test.patientName,
+              price: test.price || 0,
+              status: ultrasoundStatus,
+              scheduledAt: test.scheduledAt,
+              categoryName: 'Ultrasound Services',
+              paymentMethod: 'paid',
+              paymentVerified: test.paymentVerified || false,
+              paymentVerifiedAt: test.paymentVerifiedAt,
+              // Remove inappropriate laboratory workflow fields for ultrasound imaging
+              studyStarted: test.processingStarted || false,
+              reportCompleted: test.status === 'completed' || test.status === 'reported'
+            };
+          });
           
           return res.json(formattedResults);
         } catch (directError) {

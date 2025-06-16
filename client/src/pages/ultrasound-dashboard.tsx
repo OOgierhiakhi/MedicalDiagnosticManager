@@ -129,10 +129,36 @@ export default function UltrasoundDashboard() {
     (study.studyType || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Helper function to get appropriate ultrasound workflow status label
+  const getUltrasoundStatusLabel = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'SCHEDULED';
+      case 'payment_verified':
+        return 'PAYMENT VERIFIED';
+      case 'in_progress':
+        return 'STUDY IN PROGRESS';
+      case 'processing':
+        return 'STUDY IN PROGRESS';
+      case 'specimen_collected':
+        return 'STUDY IN PROGRESS'; // Fix inappropriate lab status for ultrasound
+      case 'completed':
+        return 'STUDY COMPLETED';
+      case 'reported':
+        return 'REPORT AVAILABLE';
+      case 'reported_and_saved':
+        return 'REPORT RELEASED';
+      default:
+        return status?.toUpperCase() || 'SCHEDULED';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed": return "default";
-      case "in-progress": return "secondary";
+      case "in_progress": 
+      case "processing":
+      case "specimen_collected": return "secondary";
       case "scheduled": return "outline";
       case "urgent": return "destructive";
       default: return "outline";
@@ -312,7 +338,7 @@ export default function UltrasoundDashboard() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusColor(study.status) as "default" | "destructive" | "outline" | "secondary"}>
-                          {study.status}
+                          {getUltrasoundStatusLabel(study.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>{study.technician}</TableCell>
@@ -335,7 +361,7 @@ export default function UltrasoundDashboard() {
                             </Button>
                           )}
                           
-                          {study.status === "in-progress" && (
+                          {(study.status === "in_progress" || study.status === "processing" || study.status === "specimen_collected") && (
                             <Dialog 
                               open={reportDialog.open && reportDialog.studyId === study.id}
                               onOpenChange={(open) => setReportDialog(

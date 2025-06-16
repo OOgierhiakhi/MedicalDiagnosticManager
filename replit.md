@@ -118,6 +118,7 @@ SENDGRID_API_KEY=sendgrid-api-key
 - Production Start: `npm run start`
 
 ## Changelog
+- June 16, 2025. Fixed imaging workflow status issue - replaced inappropriate laboratory statuses with proper imaging workflow statuses for X-ray and ultrasound studies
 - June 13, 2025. Initial setup
 
 ## User Preferences
