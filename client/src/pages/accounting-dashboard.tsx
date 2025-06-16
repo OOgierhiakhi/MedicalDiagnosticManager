@@ -97,6 +97,20 @@ export default function AccountingDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showJournalEntryForm, setShowJournalEntryForm] = useState(false);
   const [showAddAccountForm, setShowAddAccountForm] = useState(false);
+  const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
+  const [showEntryDetails, setShowEntryDetails] = useState(false);
+
+  // Get selected journal entry details
+  const { data: selectedEntry } = useQuery({
+    queryKey: ['/api/accounting/journal-entries', selectedEntryId],
+    queryFn: async () => {
+      if (!selectedEntryId) return null;
+      const response = await fetch(`/api/accounting/journal-entries/${selectedEntryId}`);
+      if (!response.ok) throw new Error('Failed to fetch entry details');
+      return response.json();
+    },
+    enabled: !!selectedEntryId && showEntryDetails
+  });
 
   // Financial Summary
   const { data: financialSummary, isLoading: summaryLoading } = useQuery({
@@ -620,10 +634,28 @@ export default function AccountingDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedEntryId(entry.id);
+                              setShowEntryDetails(true);
+                            }}
+                            title="View Details"
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              toast({
+                                title: "Edit Entry",
+                                description: `Edit functionality for entry ${entry.entryNumber} will be available soon.`,
+                              });
+                            }}
+                            title="Edit Entry"
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
                         </div>
@@ -920,6 +952,86 @@ export default function AccountingDashboard() {
             queryClient.invalidateQueries({ queryKey: ['/api/accounting/journal-entries'] });
           }}
         />
+      )}
+
+      {/* Journal Entry Details Modal */}
+      {showEntryDetails && selectedEntry && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Journal Entry Details - {selectedEntry.entryNumber}</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setShowEntryDetails(false);
+                  setSelectedEntryId(null);
+                }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Entry Date</Label>
+                  <p className="text-sm">{new Date(selectedEntry.entryDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge className={getStatusColor(selectedEntry.status)}>
+                    {selectedEntry.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <p className="text-sm">{selectedEntry.description}</p>
+              </div>
+              
+              {selectedEntry.referenceType && (
+                <div>
+                  <Label className="text-sm font-medium">Reference</Label>
+                  <p className="text-sm">{selectedEntry.referenceType}: {selectedEntry.referenceNumber}</p>
+                </div>
+              )}
+              
+              <div>
+                <Label className="text-sm font-medium">Line Items</Label>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Account</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Debit</TableHead>
+                      <TableHead>Credit</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedEntry.lineItems?.map((item: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.accountName || item.accountCode}</TableCell>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell>{item.debitAmount ? formatCurrency(item.debitAmount) : '-'}</TableCell>
+                        <TableCell>{item.creditAmount ? formatCurrency(item.creditAmount) : '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <Label className="text-sm font-medium">Total Debit</Label>
+                  <p className="text-lg font-bold text-red-600">{formatCurrency(selectedEntry.totalDebit)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Total Credit</Label>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(selectedEntry.totalCredit)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Add Account Form Modal */}
