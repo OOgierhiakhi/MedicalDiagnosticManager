@@ -106,11 +106,11 @@ export default function DashboardMessaging({
   };
 
   const isMessageRead = (message: InternalMessage, userId: number) => {
-    return Array.isArray(message.readBy) && message.readBy.some((read: any) => read.userId === userId);
+    return message.readBy && typeof message.readBy === 'object' && String(userId) in message.readBy;
   };
 
   const isMessageAcknowledged = (message: InternalMessage, userId: number) => {
-    return Array.isArray(message.acknowledgedBy) && message.acknowledgedBy.some((ack: any) => ack.userId === userId);
+    return message.acknowledgedBy && typeof message.acknowledgedBy === 'object' && String(userId) in message.acknowledgedBy;
   };
 
   const toggleMessageExpansion = (messageId: number) => {
@@ -125,19 +125,6 @@ export default function DashboardMessaging({
 
   // Filter to show only unread messages on dashboard
   const currentUserId = user?.id || 1;
-  
-  // Debug logging
-  console.log('Dashboard Messages Debug:', {
-    totalMessages: messages.length,
-    currentUserId,
-    messagesWithReadBy: messages.map(msg => ({
-      id: msg.id,
-      subject: msg.subject,
-      readBy: msg.readBy,
-      isRead: isMessageRead(msg, currentUserId)
-    }))
-  });
-  
   const unreadMessages = messages.filter(msg => !isMessageRead(msg, currentUserId));
   const urgentMessages = unreadMessages.filter(msg => msg.priority === 'urgent' || msg.priority === 'high');
   const actionRequiredMessages = unreadMessages.filter(msg => msg.actionRequired && !isMessageAcknowledged(msg, currentUserId));
