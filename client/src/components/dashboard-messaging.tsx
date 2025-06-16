@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   MessageSquare, 
@@ -50,6 +51,7 @@ export default function DashboardMessaging({
   className = "" 
 }: DashboardMessagingProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
 
   // Fetch user's messages
@@ -122,9 +124,23 @@ export default function DashboardMessaging({
   };
 
   // Filter to show only unread messages on dashboard
-  const unreadMessages = messages.filter(msg => !isMessageRead(msg, 1)); // TODO: Get actual user ID
+  const currentUserId = user?.id || 1;
+  
+  // Debug logging
+  console.log('Dashboard Messages Debug:', {
+    totalMessages: messages.length,
+    currentUserId,
+    messagesWithReadBy: messages.map(msg => ({
+      id: msg.id,
+      subject: msg.subject,
+      readBy: msg.readBy,
+      isRead: isMessageRead(msg, currentUserId)
+    }))
+  });
+  
+  const unreadMessages = messages.filter(msg => !isMessageRead(msg, currentUserId));
   const urgentMessages = unreadMessages.filter(msg => msg.priority === 'urgent' || msg.priority === 'high');
-  const actionRequiredMessages = unreadMessages.filter(msg => msg.actionRequired && !isMessageAcknowledged(msg, 1));
+  const actionRequiredMessages = unreadMessages.filter(msg => msg.actionRequired && !isMessageAcknowledged(msg, currentUserId));
 
   if (isLoading) {
     return (
@@ -173,15 +189,15 @@ export default function DashboardMessaging({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {messages.length === 0 ? (
+        {unreadMessages.length === 0 ? (
           <div className="text-center text-gray-500 py-4">
-            No messages to display
+            No unread messages to display
           </div>
         ) : (
           <div className="space-y-3">
             {displayMessages.map((message) => {
-              const isRead = isMessageRead(message, 1); // TODO: Get actual user ID
-              const isAcknowledged = isMessageAcknowledged(message, 1);
+              const isRead = isMessageRead(message, currentUserId);
+              const isAcknowledged = isMessageAcknowledged(message, currentUserId);
               const isExpanded = expandedMessages.has(message.id);
               
               return (
