@@ -6511,6 +6511,27 @@ Medical System Procurement Team
     }
   });
 
+  app.get("/api/accounting/journal-entries/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = req.user!;
+      const { id } = req.params;
+      
+      const entry = await accountingEngine.getJournalEntryDetails(
+        parseInt(id),
+        user.tenantId
+      );
+
+      res.json(entry);
+    } catch (error: any) {
+      console.error("Error fetching journal entry details:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/accounting/journal-entries", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
