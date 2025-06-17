@@ -1104,7 +1104,8 @@ export default function InvoiceManagement() {
             }}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <Button
+              variant="outline"
               onClick={async () => {
                 try {
                   if (paymentSuccessData?.invoiceId) {
@@ -1121,20 +1122,34 @@ export default function InvoiceManagement() {
                       document.body.removeChild(a);
                       
                       toast({
-                        title: "Receipt Printed",
-                        description: "Receipt with multiple copies has been generated and downloaded.",
+                        title: "PDF Receipt Downloaded",
+                        description: "Standard receipt has been downloaded.",
                       });
                     }
                   }
                 } catch (error) {
                   toast({
-                    title: "Print Failed",
-                    description: "Could not generate receipt for printing.",
+                    title: "Download Failed",
+                    description: "Could not generate PDF receipt.",
                     variant: "destructive",
                   });
                 }
-                setShowPaymentSuccessDialog(false);
-                setPaymentSuccessData(null);
+              }}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              PDF Receipt
+            </Button>
+            <AlertDialogAction 
+              onClick={() => {
+                if (paymentSuccessData?.invoiceId) {
+                  setThermalPrintInvoice({
+                    id: paymentSuccessData.invoiceId,
+                    invoiceNumber: paymentSuccessData.invoiceNumber,
+                    totalAmount: paymentSuccessData.amount
+                  });
+                  setShowPaymentSuccessDialog(false);
+                  setShowThermalPrintDialog(true);
+                }
               }}
             >
               <Printer className="w-4 h-4 mr-2" />
