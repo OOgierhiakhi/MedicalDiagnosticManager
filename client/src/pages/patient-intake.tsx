@@ -281,32 +281,7 @@ export default function PatientIntake() {
       const invoiceResponse = await apiRequest("POST", "/api/invoices", invoiceData);
       const invoice = await invoiceResponse.json();
 
-      // 3. If not invoice payment, mark as paid immediately
-      if (paymentMethod !== "invoice") {
-        await apiRequest("POST", `/api/invoices/${invoice.id}/payment`, {
-          paymentMethod: paymentMethod,
-          receivingBankAccountId: paymentMethod === "cash" ? null : selectedBankAccount,
-          paymentDetails: {
-            method: paymentMethod,
-            bank: selectedBank || null,
-            processedAt: new Date().toISOString(),
-            processedBy: user?.id
-          }
-        });
-      }
-
-      // 4. Create transaction record only if payment is processed (not for invoice)
-      if (paymentMethod !== "invoice") {
-        await apiRequest("POST", "/api/transactions", {
-          type: "payment",
-          amount: Math.max(0, calculateTotal() - calculateCommission()).toString(),
-          description: `Payment for ${selectedTests.length} diagnostic test(s) - ${paymentMethod.toUpperCase()}${selectedBank ? ` via ${selectedBank}` : ''}`,
-          patientTestId: scheduledTests[0]?.id,
-          branchId: user?.branchId,
-          tenantId: user?.tenantId,
-          createdBy: user?.id
-        });
-      }
+      // Note: Invoice is created as unpaid. Payment processing should be done separately in invoice management.
 
       setCurrentWorkflowStep("confirmation");
       setCurrentStep(4);
@@ -315,8 +290,8 @@ export default function PatientIntake() {
       setCompletedInvoiceId(invoice.id);
       
       toast({
-        title: "Success",
-        description: paymentMethod === "invoice" ? "Invoice generated and tests scheduled" : "Payment processed and tests scheduled",
+        title: "Tests Scheduled Successfully",
+        description: `Invoice ${invoice.invoiceNumber} created for ${uniqueTests.length} test(s). Payment can be processed later via Invoice Management.`,
       });
 
     } catch (error: any) {
@@ -786,7 +761,7 @@ export default function PatientIntake() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="space-y-3">
-                            {[...new Set(selectedTests)].map(testId => {
+                            {selectedTests.filter((testId, index) => selectedTests.indexOf(testId) === index).map(testId => {
                               const test = (tests as any[]).find((t: any) => t.id === testId);
                               return test ? (
                                 <div key={`order-${testId}`} className="flex justify-between text-sm">
@@ -854,102 +829,19 @@ export default function PatientIntake() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Payment Method</Label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="card">Card Payment</SelectItem>
-                        <SelectItem value="transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="pos">POS Terminal</SelectItem>
-                        <SelectItem value="invoice">Generate Invoice (Pay Later)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-2">Invoice Generation</p>
+                    <p className="text-sm text-blue-700">An unpaid invoice will be created for the selected tests. Payment can be processed later through Invoice Management.</p>
                   </div>
 
-                  {(paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="bank">Select Bank</Label>
-                        <Select value={selectedBank} onValueChange={setSelectedBank}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose bank for this transaction" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {nigerianBanks.map(bank => (
-                              <SelectItem key={bank} value={bank}>
-                                {bank}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="bankAccount">Diagnostic Center Bank Account *</Label>
-                        <Select 
-                          value={selectedBankAccount?.toString() || ""} 
-                          onValueChange={(value) => setSelectedBankAccount(Number(value))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select receiving bank account" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {organizationBankAccounts?.map((account: any) => (
-                              <SelectItem key={account.id} value={account.id.toString()}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{account.accountName}</span>
-                                  <span className="text-sm text-gray-500">
-                                    {account.bankName} - {account.accountNumber}
-                                    {account.isDefaultReceiving && " (Default)"}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">
-                          Select the diagnostic center account that will receive this payment
-                        </p>
-                      </div>
-
-                      {paymentMethod === "card" && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-sm text-blue-700">Card payment will be processed at the counter with our POS system.</p>
-                        </div>
-                      )}
-
-                      {paymentMethod === "transfer" && (
-                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
-                          <p className="text-sm font-medium text-green-800">Bank Transfer Details:</p>
-                          <p className="text-sm text-green-700">Account: Orient Medical Diagnostic</p>
-                          <p className="text-sm text-green-700">Bank: First Bank of Nigeria</p>
-                          <p className="text-sm text-green-700">Account No: 2025647890</p>
-                        </div>
-                      )}
-
-                      {paymentMethod === "pos" && (
-                        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                          <p className="text-sm text-purple-700">POS payment will be processed with the selected bank's card.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   <Button 
                     onClick={handleProceedToPayment}
-                    disabled={
-                      !appointmentDetails.scheduledAt || 
-                      !paymentMethod || 
-                      ((paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && !selectedBank) ||
-                      ((paymentMethod === "card" || paymentMethod === "pos" || paymentMethod === "transfer") && !selectedBankAccount)
-                    }
+                    disabled={!appointmentDetails.scheduledAt}
                     className="w-full"
                   >
-                    {paymentMethod === "invoice" ? "Generate Invoice & Schedule" : "Process Payment & Schedule"}
+                    Create Invoice & Schedule Tests
                   </Button>
                 </CardContent>
               </Card>
