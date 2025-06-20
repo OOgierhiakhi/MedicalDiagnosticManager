@@ -411,7 +411,8 @@ export default function PatientIntake() {
   };
 
   const calculateTotal = () => {
-    return selectedTests.reduce((total, testId) => {
+    const uniqueTestIds = selectedTests.filter((testId, index) => selectedTests.indexOf(testId) === index);
+    return uniqueTestIds.reduce((total, testId) => {
       const test = (tests as any[]).find((t: any) => t.id === testId);
       const price = typeof test?.price === 'string' ? parseFloat(test.price) : (test?.price || 0);
       return total + price;
@@ -425,9 +426,10 @@ export default function PatientIntake() {
     if (!provider || !provider.commissionRate) return 0;
 
     let totalRebate = 0;
+    const uniqueTestIds = selectedTests.filter((testId, index) => selectedTests.indexOf(testId) === index);
     
     // Calculate rebate per service with individual caps
-    selectedTests.forEach(testId => {
+    uniqueTestIds.forEach(testId => {
       const test = (tests as any[]).find((t: any) => t.id === testId);
       if (test) {
         const price = parseFloat(test.price) || 0;
@@ -784,10 +786,10 @@ export default function PatientIntake() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="space-y-3">
-                            {selectedTests.map(testId => {
+                            {[...new Set(selectedTests)].map(testId => {
                               const test = (tests as any[]).find((t: any) => t.id === testId);
                               return test ? (
-                                <div key={test.id} className="flex justify-between text-sm">
+                                <div key={`order-${testId}`} className="flex justify-between text-sm">
                                   <span className="flex-1">{test.name}</span>
                                   <span className="font-medium">₦{(test.price || 0).toLocaleString()}</span>
                                 </div>
