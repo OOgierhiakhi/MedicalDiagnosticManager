@@ -1198,16 +1198,23 @@ export function registerRoutes(app: Express): Server {
       const enrichedTests = [];
       for (const test of tests) {
         let enrichedTest = { ...test };
-        if (test.testId && !test.name && !test.testName) {
+        // Always try to get test details if testId exists
+        if (test.testId) {
           try {
             const testDetails = await storage.getTest(test.testId);
             if (testDetails) {
               enrichedTest.name = testDetails.name;
               enrichedTest.testName = testDetails.name;
+              enrichedTest.description = testDetails.name;
             }
           } catch (error) {
             console.error('Error fetching test details:', error);
           }
+        }
+        // Fallback to existing test data if available
+        if (!enrichedTest.name && !enrichedTest.testName) {
+          enrichedTest.name = test.testName || test.description || test.name || 'Service';
+          enrichedTest.testName = test.testName || test.description || test.name || 'Service';
         }
         enrichedTests.push(enrichedTest);
       }
