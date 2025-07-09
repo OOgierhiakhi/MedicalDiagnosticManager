@@ -219,24 +219,11 @@ export default function PatientIntake() {
   };
 
   const handleProceedToPayment = async () => {
-    if (!appointmentDetails.scheduledAt || !paymentMethod) {
-      toast({
-        title: "Missing Information",
-        description: "Please select appointment time and payment method.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // No validation needed for invoice-only workflow
+    // Set default appointment time if not provided
+    const scheduledTime = appointmentDetails.scheduledAt || new Date().toISOString().slice(0, 16);
 
-    // Validate bank account selection for non-cash payments
-    if (paymentMethod !== "cash" && paymentMethod !== "invoice" && !selectedBankAccount) {
-      toast({
-        title: "Bank Account Required",
-        description: "Please select a diagnostic center bank account for non-cash payments.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // No additional validation needed for invoice-only workflow
 
     setCurrentWorkflowStep("processing");
 
@@ -250,7 +237,7 @@ export default function PatientIntake() {
           branchId: Number(user?.branchId),
           tenantId: Number(user?.tenantId),
           status: "scheduled",
-          scheduledAt: appointmentDetails.scheduledAt,
+          scheduledAt: scheduledTime,
           notes: appointmentDetails.notes || ""
         }).then(response => response.json());
       });
@@ -838,7 +825,7 @@ export default function PatientIntake() {
 
                   <Button 
                     onClick={handleProceedToPayment}
-                    disabled={!appointmentDetails.scheduledAt}
+                    disabled={false}
                     className="w-full"
                   >
                     Create Invoice & Schedule Tests
