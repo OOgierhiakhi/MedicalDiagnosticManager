@@ -836,6 +836,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markInvoiceAsPaid(id: number, paymentData: { paymentMethod: string; receivingBankAccountId?: number | null; paidAt: Date; receiptNumber: string }): Promise<void> {
+    // Get the invoice details first
+    const invoice = await this.getInvoice(id);
+    if (!invoice) {
+      throw new Error("Invoice not found");
+    }
+
+    // Mark invoice as paid
     await db
       .update(invoices)
       .set({
@@ -845,6 +852,53 @@ export class DatabaseStorage implements IStorage {
         receiptNumber: paymentData.receiptNumber
       })
       .where(eq(invoices.id, id));
+
+    // Create patient test records for laboratory workflow if they don't exist
+    if (invoice.tests && Array.isArray(invoice.tests)) {
+      for (const test of invoice.tests) {
+        if (test.testId) {
+          // Check if patient test record already exists
+          const existingTest = await db
+            .select()
+            .from(patientTests)
+            .where(
+              and(
+                eq(patientTests.patientId, invoice.patientId),
+                eq(patientTests.testId, test.testId),
+                eq(patientTests.branchId, invoice.branchId),
+                eq(patientTests.tenantId, invoice.tenantId)
+              )
+            )
+            .limit(1);
+
+          // Only create if it doesn't exist
+          if (existingTest.length === 0) {
+            await this.createPatientTest({
+              patientId: invoice.patientId,
+              testId: test.testId,
+              status: "scheduled",
+              scheduledAt: new Date(),
+              tenantId: invoice.tenantId,
+              branchId: invoice.branchId,
+              technicianId: 1, // Default technician ID
+              paymentVerified: true, // Mark as payment verified since invoice is paid
+              paymentVerifiedAt: paymentData.paidAt,
+              paymentVerifiedBy: 1 // Default verifier ID
+            });
+          } else {
+            // Update existing test to mark payment as verified
+            await db
+              .update(patientTests)
+              .set({
+                paymentVerified: true,
+                paymentVerifiedAt: paymentData.paidAt,
+                paymentVerifiedBy: 1
+              })
+              .where(eq(patientTests.id, existingTest[0].id));
+          }
+        }
+      }
+    }
   }
 
   async getPatientInvoices(patientId: number, tenantId: number): Promise<Invoice[]> {
