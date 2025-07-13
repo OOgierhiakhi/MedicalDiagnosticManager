@@ -23,12 +23,14 @@ import {
   DollarSign,
   Heart,
   Microscope,
-  Truck
+  Truck,
+  LogOut
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 const sidebarItems = [
   {
@@ -126,6 +128,7 @@ const sidebarItems = [
 export default function MainDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [location] = useLocation();
+  const { logoutMutation } = useAuth();
   
   const { data: organizationData } = useQuery({
     queryKey: ["/api/organization-branding"],
@@ -198,22 +201,45 @@ export default function MainDashboard() {
         </div>
 
         {/* Footer */}
-        {!sidebarCollapsed && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">System Online</span>
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          {!sidebarCollapsed && (
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">System Online</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {new Date().toLocaleDateString('en-NG', { 
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="w-full flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </Button>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {new Date().toLocaleDateString('en-NG', { 
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </p>
-          </div>
-        )}
+          )}
+          {sidebarCollapsed && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="w-full p-2 text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Main Content */}
