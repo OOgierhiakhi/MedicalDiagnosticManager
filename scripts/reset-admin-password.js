@@ -5,8 +5,8 @@
  * Run this on your deployed environment to reset admin credentials
  */
 
-const bcrypt = require('bcrypt');
-const { Pool } = require('pg');
+import bcrypt from 'bcrypt';
+import { Pool } from 'pg';
 
 async function resetAdminPassword() {
   const pool = new Pool({
