@@ -1,290 +1,171 @@
-# Orient Medical Diagnostic Centre - ERP System
+# Orient Medical Diagnostic Centre ERP System
 
-![CI/CD Pipeline](https://github.com/orientmedical/erp/actions/workflows/ci-cd.yml/badge.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node.js](https://img.shields.io/badge/node.js-20.x-green.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.x-blue.svg)
+A comprehensive Enterprise Resource Planning (ERP) system specifically designed for medical diagnostic centers in Nigeria. Features intelligent workflow management through advanced data management and patient-centric technologies with multi-tenant architecture.
 
-A sophisticated medical diagnostic center ERP system that optimizes operational workflows through advanced data management and patient-centric technologies.
+## 🏥 Features
 
-## Quick Start
+### Core Modules
+- **Patient Management**: Registration, records, appointment scheduling
+- **Laboratory Information System**: Test processing, results, quality control
+- **Financial Management**: Multi-level approval workflows, revenue tracking
+- **Inventory Management**: Stock control, reorder levels, consumption tracking
+- **Role-Based Access Control**: Granular permissions, security audit dashboard
+
+### Specialized Units
+- **Radiology/Imaging**: X-Ray, CT, Ultrasound management
+- **Cardiology**: ECG, stress tests, monitoring
+- **Laboratory**: Hematology, Chemistry, Microbiology
+- **Pharmacy**: Medication dispensing and inventory
+
+### Financial Features
+- **Multi-payment Methods**: Cash, bank transfer, POS, mobile payments
+- **Commission Calculation**: Referral provider rebates
+- **Thermal Receipt Printing**: 80mm and 110mm formats
+- **Invoice Management**: Automated billing and payment processing
+
+## 🛠 Technology Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Node.js + Express + TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **UI Framework**: Tailwind CSS + shadcn/ui components
+- **State Management**: TanStack Query + Context API
+- **Authentication**: Passport.js with session-based authentication
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 20+ and npm
-- PostgreSQL database
-- GitHub repository with Actions enabled
+- Node.js 18+ 
+- PostgreSQL 14+
+- npm or yarn
 
-### 1. Setup GitHub Secrets
-
-Configure these secrets in your GitHub repository settings (`Settings > Secrets and variables > Actions`):
-
-#### Required for CI/CD Pipeline
-```bash
-SLACK_WEBHOOK=https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
-SNYK_TOKEN=your-snyk-security-token
-```
-
-#### Staging Environment
-```bash
-STAGING_DATABASE_URL=postgresql://user:password@staging-host:5432/dbname
-STAGING_SESSION_SECRET=staging-random-secret-key-32-chars
-STAGING_JWT_SECRET=staging-jwt-signing-key
-STAGING_STRIPE_SECRET_KEY=sk_test_staging_stripe_key
-STAGING_STRIPE_PUBLIC_KEY=pk_test_staging_stripe_key
-STAGING_SENDGRID_API_KEY=SG.staging_sendgrid_api_key
-STAGING_URL=https://staging.orientmedical.com
-```
-
-#### Production Environment
-```bash
-PRODUCTION_DATABASE_URL=postgresql://user:password@prod-host:5432/dbname
-PRODUCTION_SESSION_SECRET=production-random-secret-key-32-chars
-PRODUCTION_JWT_SECRET=production-jwt-signing-key
-PRODUCTION_STRIPE_SECRET_KEY=sk_live_production_stripe_key
-PRODUCTION_STRIPE_PUBLIC_KEY=pk_live_production_stripe_key
-PRODUCTION_SENDGRID_API_KEY=SG.production_sendgrid_api_key
-PRODUCTION_URL=https://orientmedical.com
-```
-
-### 2. One-Line Deploy Commands
-
-#### Automatic Deployment
-```bash
-# Deploy to staging (automatic on main branch)
-git push origin main
-
-# Deploy to production (automatic on release tags)
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-#### Manual Deployment Scripts
-```bash
-# Health monitoring
-node scripts/health-check.js
-
-# Database backup
-node scripts/backup.js
-
-# Emergency rollback
-FORCE_ROLLBACK=true node scripts/rollback.js
-
-# Run smoke tests
-node scripts/smoke-tests.js
-```
-
-### 3. Local Development
+### Environment Variables
+Create a `.env` file in the root directory:
 
 ```bash
-# Clone and install
-git clone https://github.com/orientmedical/erp.git
-cd erp
-npm install
+DATABASE_URL=postgresql://username:password@localhost:5432/orient_medical
+SESSION_SECRET=your-super-secret-session-key
+NODE_ENV=development
 
-# Setup environment
-cp .env.example .env
-# Edit .env with your local database credentials
-
-# Initialize database
-npm run db:push
-
-# Start development server
-npm run dev
+# Optional: Third-party integrations
+STRIPE_SECRET_KEY=your-stripe-secret-key
+SENDGRID_API_KEY=your-sendgrid-api-key
+ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
-### 4. Adding the Status Badge
+### Installation
 
-Add this to your repository README:
-```markdown
-![CI/CD Pipeline](https://github.com/YOUR_USERNAME/YOUR_REPO/actions/workflows/ci-cd.yml/badge.svg)
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/orient-medical-erp.git
+   cd orient-medical-erp
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Setup database**
+   ```bash
+   # Push database schema
+   npm run db:push
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Access the application**
+   - Open http://localhost:5000
+   - Login with: `admin` / `admin123`
+
+## 📦 Deployment
+
+### Render.com Deployment
+
+1. **Connect GitHub repository** to Render
+2. **Set build command**: `npm install && npm run build`
+3. **Set start command**: `npm run start`
+4. **Environment variables**:
+   ```
+   NODE_ENV=development
+   DATABASE_URL=your-postgresql-connection-string
+   SESSION_SECRET=your-random-secret-key
+   ```
+
+### Production Build
+```bash
+npm run build
+npm run start
 ```
 
-Replace `YOUR_USERNAME` and `YOUR_REPO` with your actual GitHub username and repository name.
+## 🔐 Default Credentials
 
-## Features
+**Administrator Account**:
+- Username: `admin`
+- Password: `admin123`
+- Role: System Administrator
 
-### Core ERP Modules
-- **Patient Management**: Complete patient lifecycle with medical history tracking
-- **Laboratory Operations**: Test scheduling, result management, quality control
-- **Financial Management**: Billing, invoicing, payment processing, revenue tracking
-- **Inventory Management**: Stock control, automated reordering, consumption tracking
-- **Human Resources**: Staff management, scheduling, performance tracking
-- **Referral System**: Doctor referrals with automated rebate calculations
+**Change default password immediately after first login**
 
-### Advanced Capabilities
-- **Role-Based Access Control (RBAC)**: Granular permissions for different user types
-- **Audit Trail**: Comprehensive logging of all system activities
-- **Reporting & Analytics**: Real-time dashboards and exportable reports
-- **Approval Workflows**: Multi-level approval processes with timestamp logging
-- **Predictive Analytics**: ML-powered revenue forecasting and inventory optimization
-- **Multi-Tenant Architecture**: Support for multiple branches and organizations
+## 📁 Project Structure
 
-### DevOps & Deployment
-- **Zero-Touch CI/CD**: Automated testing, building, and deployment
-- **Database Migrations**: Safe, reversible schema changes
-- **Health Monitoring**: Real-time system health checks and alerting
-- **Security Scanning**: Automated vulnerability detection and reporting
-- **Backup & Recovery**: Automated backups with emergency rollback capabilities
-
-## Technology Stack
-
-### Backend
-- **Runtime**: Node.js 20+ with TypeScript
-- **Framework**: Express.js with secure authentication
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Session-based with JWT support
-- **Payment Processing**: Stripe integration
-- **Email**: SendGrid for notifications
-
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for client-side navigation
-- **State Management**: TanStack Query for server state
-- **UI Components**: Radix UI with Tailwind CSS
-- **Forms**: React Hook Form with Zod validation
-- **Charts**: Recharts for data visualization
-
-### Infrastructure
-- **CI/CD**: GitHub Actions with automated deployment
-- **Monitoring**: Custom health checks with Slack integration
-- **Security**: Snyk vulnerability scanning
-- **Database**: PostgreSQL with connection pooling
-- **Hosting**: Production-ready with load balancing support
-
-## Architecture
-
-### System Design
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │   Database      │
-│   React/TS      │◄──►│   Express/TS    │◄──►│   PostgreSQL    │
-│   Tailwind CSS  │    │   Drizzle ORM   │    │   Multi-tenant  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   UI Components │    │   Business      │    │   Data Layer    │
-│   Radix UI      │    │   Logic         │    │   Relations     │
-│   shadcn/ui     │    │   Validation    │    │   Constraints   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── pages/          # Page components
+│   │   ├── hooks/          # Custom React hooks
+│   │   └── lib/            # Utilities and configurations
+├── server/                 # Express backend
+│   ├── routes.ts          # API endpoints
+│   ├── storage.ts         # Database layer
+│   └── index.ts           # Server entry point
+├── shared/                 # Shared types and schemas
+└── scripts/               # Utility scripts
 ```
 
-### Security Model
-- Multi-tenant data isolation with row-level security
-- Role-based access control with granular permissions
-- Encrypted data transmission and secure session management
-- Automated security scanning and vulnerability monitoring
-- Audit logging for all critical operations
+## 🏗 Architecture
 
-## API Documentation
+### Multi-Tenant Design
+- Isolated database records with tenant-specific schemas
+- Configurable branding and color themes
+- Branch-specific operations and user management
+- Role-based access control (RBAC) system
 
-### Health Check Endpoints
-- `GET /api/health` - Overall system status
-- `GET /api/health/database` - Database connectivity
-- `GET /api/health/auth` - Authentication service status
-- `GET /api/health/external` - External service dependencies
+### Data Flow
+1. **Patient Visit**: Registration → Service Selection → Referral Assignment → Invoice Generation → Payment Processing
+2. **Financial Approval**: Request → Automatic Routing → CEO Escalation → Payment Authorization → Audit Trail
+3. **Commission Calculation**: Service-specific rebate limits → Per-visit tracking → Monthly invoicing
 
-### Core API Routes
-- `POST /api/patients` - Patient registration and management
-- `GET /api/tests` - Laboratory test management
-- `POST /api/invoices` - Financial transaction processing
-- `GET /api/inventory` - Stock and inventory operations
-- `GET /api/reports` - Analytics and reporting endpoints
+## 🔧 Available Scripts
 
-## Database Schema
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run db:push` - Push database schema changes
+- `npm run check` - Type checking
 
-### Core Entities
-- **Patients**: Demographics, medical history, insurance information
-- **Tests**: Laboratory procedures, results, quality metrics
-- **Invoices**: Billing records, payment status, financial tracking
-- **Inventory**: Stock items, consumption patterns, reorder levels
-- **Users**: Staff accounts, roles, permissions, audit trails
+## 🤝 Contributing
 
-### Relationships
-- One-to-many: Patient → Tests, Patient → Invoices
-- Many-to-many: Tests → Inventory (consumption tracking)
-- Hierarchical: Organizations → Branches → Departments
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Deployment Environments
+## 📄 License
 
-### Development
-- Local development with hot reload
-- In-memory session storage
-- Development database with seed data
-- Debug logging enabled
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Staging
-- Production-like environment for testing
-- PostgreSQL database with realistic data
-- Stripe test mode for payment processing
-- Comprehensive monitoring and logging
+## 🆘 Support
 
-### Production
-- High-availability configuration
-- Database replication and backups
-- Stripe live mode for real transactions
-- 24/7 monitoring with alerting
+For support and questions:
+- Create an issue in the GitHub repository
+- Contact: support@orient-medical.com
 
-## Monitoring & Alerting
+## 🏥 About Orient Medical
 
-### Health Monitoring
-- Application uptime and response time tracking
-- Database performance and connection monitoring
-- External service dependency checks
-- Real-time error rate and performance metrics
-
-### Alert Conditions
-- Application downtime exceeding 2 minutes
-- Error rate above 5% threshold
-- Database connection failures
-- Payment processing issues
-- Security incidents
-
-### Notification Channels
-- Slack integration for team notifications
-- Email alerts for critical system issues
-- SMS notifications for emergency situations
-- Dashboard displays for real-time monitoring
-
-## Contributing
-
-### Development Workflow
-1. Fork the repository and create a feature branch
-2. Make changes with appropriate tests and documentation
-3. Ensure all CI checks pass (linting, tests, security scans)
-4. Create a pull request with detailed description
-5. Code review and approval before merging
-
-### Code Standards
-- TypeScript for all new code with strict type checking
-- ESLint configuration for consistent code style
-- Comprehensive test coverage for critical functionality
-- Security-first approach with vulnerability scanning
-
-### Testing Requirements
-- Unit tests for business logic components
-- Integration tests for API endpoints
-- End-to-end tests for critical user workflows
-- Performance testing for database operations
-
-## Support & Documentation
-
-### Additional Resources
-- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Complete operational procedures
-- [CI/CD Documentation](README_CICD.md) - Pipeline configuration and troubleshooting
-- [API Reference](docs/api.md) - Detailed endpoint documentation
-- [User Guides](docs/user-guides/) - End-user documentation
-
-### Getting Help
-1. Check existing documentation and troubleshooting guides
-2. Review system logs and monitoring dashboards
-3. Contact development team: dev-team@orientmedical.com
-4. For emergencies: ops-team@orientmedical.com
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-Built with modern web technologies and best practices for healthcare data management, ensuring compliance with medical data protection standards and operational excellence in diagnostic center management.
+Orient Medical Diagnostic Centre is a leading healthcare provider in Nigeria, committed to delivering quality diagnostic services with advanced technology and professional excellence.

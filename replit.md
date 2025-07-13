@@ -118,6 +118,9 @@ SENDGRID_API_KEY=sendgrid-api-key
 - Production Start: `npm run start`
 
 ## Changelog
+- January 13, 2025. Prepared for GitHub upload and Render deployment - added comprehensive documentation, deployment guides, and cleaned project structure
+- January 13, 2025. Fixed login workflow issues - removed validation barriers in patient intake form, added logout functionality to main dashboard
+- January 13, 2025. Resolved laboratory workflow integration - tests now automatically appear on lab board after payment processing
 - June 16, 2025. Fixed imaging workflow status issue - replaced inappropriate laboratory statuses with proper imaging workflow statuses for X-ray and ultrasound studies
 - June 13, 2025. Initial setup
 

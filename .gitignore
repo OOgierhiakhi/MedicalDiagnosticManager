@@ -1,6 +1,79 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Database
+*.sqlite
+*.db
+
+# Temporary files
+tmp/
+temp/
+
+# Cache
+.cache/
+
+# Replit specific
+.replit
+replit.nix
+
+# Test files
+test-*.pdf
+test-*.txt
+*.txt
+cookies*.txt
+response_headers.txt
+
+# Simulation results
+simulation_test_results/
+
+# Attached assets (user uploads)
+attached_assets/
+
+# Documentation that might contain sensitive info
+TROUBLESHOOTING.md
+regression-test-results.md
+*VALIDATION_REPORT.md
+*DEPLOYMENT_REPORT.md
